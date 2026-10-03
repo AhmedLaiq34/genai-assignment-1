@@ -1,0 +1,5 @@
+device: local
+data_root: data
+output_root: artifacts
+persist_root: artifacts
+num_workers: 4   # <=4 on Windows (plan §0)

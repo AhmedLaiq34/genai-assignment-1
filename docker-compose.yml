@@ -1,0 +1,20 @@
+# One command:  docker compose up --build     then open http://localhost:8080
+services:
+  backend:
+    build:
+      context: .                       # repo root, so the genai package can be installed
+      dockerfile: app/backend/Dockerfile
+    environment:
+      MODELS_DIR: /models
+    volumes:
+      - ./models/onnx:/models:ro       # ONNX files are mounted, not baked into the image
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: app/frontend            # its Dockerfile builds the site and runs nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

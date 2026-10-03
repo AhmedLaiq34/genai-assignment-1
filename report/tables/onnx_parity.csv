@@ -1,0 +1,2 @@
+date_utc,model,tag,n_inputs,max_abs_diff,mean_abs_diff,tolerance,passed,onnx_sha256,checkpoint
+2026-10-03T19:52:50+00:00,t1_universal,smoke,16,2.086162567138672e-07,1.750504452502355e-08,0.0001,True,512d25373f3c56be2ba8f18b1710b93d26d6c58b039d27557917053d02f84494,artifacts/runs/task1/20261004-0013_local_t1_smoke/ckpt_last.pt

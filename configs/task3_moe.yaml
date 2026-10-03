@@ -1,0 +1,15 @@
+# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
+study: t3_moe
+objective: "J = 0.5*L1 + 0.5*(1-SSIM) (minimise) + collapse pruning"
+n_trials: TBD_AFTER_BENCHMARK
+epochs: TBD_AFTER_BENCHMARK
+sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
+pruner: Median
+storage: artifacts/optuna/t3_moe.db   # promoted to studies/t3_moe.db when complete
+initial_values: {lambda_1: 0.8, lambda_s: 0.2, lambda_c: 0.1, lambda_b: 0.01}   # PDF-given starting points, to be investigated not accepted
+tuned_params:
+  - {name: joint_lr, range: TBD_AFTER_BENCHMARK}
+  - {name: tau, range: TBD_AFTER_BENCHMARK}
+  - {name: lambda_c, range: TBD_AFTER_BENCHMARK}
+  - {name: lambda_b, range: TBD_AFTER_BENCHMARK}
+  - {name: recon_weighting, range: TBD_AFTER_BENCHMARK}

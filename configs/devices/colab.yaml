@@ -1,0 +1,5 @@
+device: colab
+data_root: /content
+output_root: /content
+persist_root: /content/drive/MyDrive/genai-a1
+num_workers: 2   # TODO confirm on actual instance

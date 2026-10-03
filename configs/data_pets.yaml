@@ -1,0 +1,24 @@
+# Implements CONTRACTS §3.1, §3.3, §3.4 (authoritative: docs/CONTRACTS.md)
+dataset: oxford_iiit_pet
+raw_dir: data/raw/pets
+cache_dir: data/cache/pets128
+split_file: data/splits/pets_split.json
+val_manifest: data/manifests/pets_val_manifest.jsonl
+test_manifest: data/manifests/pets_test_manifest.jsonl
+seed: 42
+val_fraction: 0.2
+img_size: 128
+resize: {mode: direct, interpolation: bicubic, preserve_aspect: false, exif_transpose: true, order: before_corruption}
+tensor: {dtype: float32, layout: NCHW, range: [0.0, 1.0]}
+classes: [clean, salt_pepper, gaussian_blur, occlusion]
+corruptions_train:
+  salt_pepper: {p: [0.02, 0.15], per_pixel_mask_shared_across_channels: true, black_white_prob: 0.5}
+  gaussian_blur: {kernel: [3, 5, 7], sigma: [0.5, 2.5], padding: reflect}
+  occlusion: {n_rects: [1, 2, 3], union_coverage: [0.10, 0.35], fill: 0.0, rejection_sample: true}
+test_severities:
+  salt_pepper: {low: 0.03, medium: 0.08, high: 0.15}
+  gaussian_blur: {low: [3, 0.7], medium: [5, 1.5], high: [7, 2.5]}
+  occlusion: {low: {n_rects: 1, coverage: 0.10}, medium: {n_rects: 2, coverage: 0.20}, high: {n_rects: 3, coverage: 0.35}, tolerance_pp: 1, non_overlapping: true}
+severity_label_train: tertiles_of_severity_parameter
+samplers: [iid_uniform, balanced_batch, "fixed:k"]
+test_locked: true   # test only via --final-test

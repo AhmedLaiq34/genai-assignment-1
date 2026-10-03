@@ -1,0 +1,17 @@
+# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
+study: t4_cgan
+objective: "val L1 on [0,1]-rescaled sketches (minimise)"
+n_trials: TBD_AFTER_BENCHMARK
+epochs: TBD_AFTER_BENCHMARK
+sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
+pruner: Median
+storage: artifacts/optuna/t4_cgan.db   # promoted to studies/t4_cgan.db when complete
+initial_values: {lambda_L1: 100}   # PDF-given starting points, to be investigated not accepted
+tuned_params:
+  - {name: lr_G, range: TBD_AFTER_BENCHMARK}
+  - {name: lr_D, range: TBD_AFTER_BENCHMARK}
+  - {name: batch, range: TBD_AFTER_BENCHMARK}
+  - {name: base_channels, range: TBD_AFTER_BENCHMARK}
+  - {name: dropout, range: TBD_AFTER_BENCHMARK}
+  - {name: embed_dim, range: TBD_AFTER_BENCHMARK}
+  - {name: lambda_L1, range: TBD_AFTER_BENCHMARK}

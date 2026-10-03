@@ -1,0 +1,16 @@
+# Implements CONTRACTS §3.7 (authoritative: docs/CONTRACTS.md)
+dataset: fs2k
+raw_dir: data/raw/fs2k
+cache_dir: data/cache/fs2k128
+split_file: data/splits/fs2k_split.json
+annotations: {train: anno_train.json, test: anno_test.json}
+seed: 42
+val_fraction: 0.15
+stratify_by: style
+img_size: 128
+style_ids: [0, 1, 2]   # UI Style 1/2/3 -> 0/1/2; verify annotation encoding in Phase 1
+tensor:
+  photo: {channels: 3, range: [-1.0, 1.0]}
+  sketch: {channels: 1, range: [-1.0, 1.0]}   # grayscale
+augment_train: {resize: 143, random_crop: 128, hflip: true, identical_for_pair: true}
+test_locked: true

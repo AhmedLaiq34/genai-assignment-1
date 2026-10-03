@@ -1,0 +1,14 @@
+# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
+study: t2_specialist_shared
+objective: "mean J over 3 corruptions (minimise)"
+n_trials: TBD_AFTER_BENCHMARK
+epochs: TBD_AFTER_BENCHMARK
+sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
+pruner: Median
+storage: artifacts/optuna/t2_specialist_shared.db   # promoted to studies/t2_specialist_shared.db when complete
+tuned_params:
+  - {name: lr, range: TBD_AFTER_BENCHMARK}
+  - {name: bottleneck, range: TBD_AFTER_BENCHMARK}
+  - {name: channels, range: TBD_AFTER_BENCHMARK}
+  - {name: batch, range: TBD_AFTER_BENCHMARK}
+  - {name: l1_ssim_weight, range: TBD_AFTER_BENCHMARK}

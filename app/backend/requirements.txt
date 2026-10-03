@@ -1,0 +1,7 @@
+# genai (the repo package) and CPU-only torch are installed separately in the Dockerfile.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+onnxruntime>=1.18
+numpy>=1.26
+pillow>=10

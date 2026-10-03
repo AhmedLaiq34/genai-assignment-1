@@ -1,0 +1,66 @@
+# Task 1 configuration. Implements CONTRACTS 3.6, 3.8, 3.13.
+# Device keys (device, data_root, output_root, persist_root, num_workers) are merged in from
+# configs/devices/<profile>.yaml by scripts/*.py and by genai.tasks.task1.config.load_config.
+#
+# Budgets (n_trials, epochs) stay TBD_AFTER_BENCHMARK until docs/BENCHMARKS.md has measurements.
+# Everything marked PROVISIONAL is a starting point for smoke runs / the benchmark, not a result.
+
+task: t1
+seed: 42
+data_config: configs/data_pets.yaml     # file names of split / manifests (see data_pets.yaml)
+
+run:
+  desc: t1              # short description used in run_id = <YYYYmmdd-HHMM>_<device>_<desc>
+  smoke: false          # true -> run_id gets the suffix _smoke and the run must never be promoted
+  project: genai-a1     # tracker project (group = task1)
+
+# ---- model: constructor arguments of UniversalAE (PROVISIONAL defaults; the Optuna study picks the final ones)
+model:
+  in_ch: 3
+  base_channels: 32     # PROVISIONAL
+  depth: 4              # 128 -> 8 spatial (fixed architecture choice, not tuned)
+  bottleneck_dim: 256   # PROVISIONAL
+  dropout: 0.1          # PROVISIONAL
+
+# ---- training (final training uses the study's best values; these are PROVISIONAL)
+train:
+  lr: 1.0e-3            # PROVISIONAL
+  batch_size: 64        # PROVISIONAL
+  alpha: 0.8            # PDF-given starting value, to be investigated by Optuna (not accepted)
+  weight_decay: 1.0e-4  # PROVISIONAL (not tuned)
+  epochs: TBD_AFTER_BENCHMARK
+  max_steps: null       # optional hard cap on optimiser steps (smoke runs / dry runs)
+  pause_after_steps: null   # stop early WITHOUT changing the schedule (tests of resume)
+  train_subset: null    # use only the first N train images (smoke runs / dry runs)
+  val_subset: null      # use only the first N val manifest rows (multiple of 4)
+  amp: false            # mixed precision; decided after the benchmark
+  scheduler: cosine     # cosine | none
+  grad_clip: null
+  log_every_steps: 50
+  sample_every_epochs: 1
+  checkpoint_every_minutes: 10
+  val_batch_size: 128
+  val_workers: 0        # val data is loaded in the main process (each worker costs ~0.5 GB RAM on Windows)
+
+# ---- Optuna study (CONTRACTS 3.13)
+study: t1_universal
+objective: "J = 0.5*L1 + 0.5*(1-SSIM) (minimise)"
+n_trials: TBD_AFTER_BENCHMARK
+epochs_per_trial: TBD_AFTER_BENCHMARK   # trials use reduced epochs; declared in the report
+trial_train_subset: null                # optional training subset for trials; null = all
+sampler: {name: TPE, seed: 42}
+pruner: {name: Median, n_startup_trials: 5, n_warmup_steps: 1}   # PROVISIONAL pruner settings
+storage: artifacts/optuna/t1_universal.db   # promoted to studies/t1_universal.db when complete
+study_dir: studies/t1_universal             # trials.csv + plots
+initial_values: {alpha: 0.8}   # PDF-given starting points, to be investigated not accepted
+
+# PROVISIONAL search space (REC, CONTRACTS 3.13: "ranges are refined after benchmarking").
+# `name` -> where it goes in the config is defined in genai/tasks/task1/tune.py.
+search_space_status: PROVISIONAL
+tuned_params:
+  - {name: lr,               type: float,       low: 1.0e-4, high: 3.0e-3, log: true}
+  - {name: batch,            type: categorical, choices: [32, 64, 128]}
+  - {name: bottleneck_dim,   type: categorical, choices: [64, 128, 256, 512]}
+  - {name: encoder_channels, type: categorical, choices: [16, 32, 48, 64]}
+  - {name: dropout,          type: float,       low: 0.0,    high: 0.3, log: false}
+  - {name: alpha,            type: float,       low: 0.5,    high: 0.95, log: false}

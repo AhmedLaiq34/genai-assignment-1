@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.onnx binary
+# Git LFS for ONNX (enable only if LFS is chosen):
+# *.onnx filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,19 @@
+{
+  "name": "t1_universal",
+  "onnx_file": "t1_universal_ae.onnx",
+  "onnx_sha256": "512d25373f3c56be2ba8f18b1710b93d26d6c58b039d27557917053d02f84494",
+  "source_checkpoint": "artifacts/runs/task1/20261004-0013_local_t1_smoke/ckpt_last.pt",
+  "checkpoint_sha256": "a5e61b5bbe7ed2908db6b136cb5485d7896f1d4d043626590ed9b6420bcf44c0",
+  "run_id": "20261004-0013_local_t1_smoke",
+  "global_step": 50,
+  "smoke": true,
+  "opset": 17,
+  "model_config": {
+    "in_ch": 3,
+    "base_channels": 32,
+    "depth": 4,
+    "bottleneck_dim": 256,
+    "dropout": 0.1
+  },
+  "parameters": 9785987
+}

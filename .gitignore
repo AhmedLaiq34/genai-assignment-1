@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+build/
+# Node / frontend
+node_modules/
+dist/
+# Data (splits/ and manifests/ are committed)
+data/raw/*
+data/cache/*
+!data/raw/.gitkeep
+!data/cache/.gitkeep
+# Run outputs
+artifacts/*
+!artifacts/.gitkeep
+models/checkpoints/*
+!models/checkpoints/.gitkeep
+models/onnx/*.onnx
+wandb/
+mlruns*/
+*.pt
+*.ckpt
+# LaTeX build files
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.bbl
+report/*.blg
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz
+# Secrets
+.env
+# NOT ignored (explicit): data/splits/, data/manifests/, studies/, models/MANIFEST.json
