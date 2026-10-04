@@ -82,7 +82,9 @@ try {
   await upload.setInputFiles({ name: 'large.png', mimeType: 'image/png', buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
   await page.getByRole('alert').filter({ hasText: 'too large' }).waitFor();
   await upload.setInputFiles(fixture);
-  assert(await page.getByRole('checkbox', { name: /Already corrupted/ }).isChecked());
+  assert(!(await page.getByRole('checkbox', { name: /Already corrupted/ }).isChecked()));   // uploads can be corrupted by default
+  assert(await page.getByRole('group', { name: 'Corruption type' }).getByRole('button', { name: 'Gaussian blur' }).isEnabled());
+  await page.getByRole('checkbox', { name: /Already corrupted/ }).check();
   assert(await page.getByRole('group', { name: 'Corruption type' }).getByRole('button', { name: 'Gaussian blur' }).isDisabled());
   await run().click();
   const payload = await page.evaluate(() => window.lastFormFields);

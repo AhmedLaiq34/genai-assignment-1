@@ -45,7 +45,7 @@ Stop the mock with Ctrl+C. Have the existing FastAPI backend running at `http://
 
 - Restoration sends exactly one of `file` or `sample_id`, plus `corruption`, `severity`, `seed`, and optional JSON `params`.
 - Custom parameters use `p`, `kernel`/`sigma`, or `n_rects`/`coverage`. The severity field remains `low`, `medium`, or `high` even with custom parameters.
-- Uploads default to **Already corrupted**, lock additional corruption, and send `corruption=none`. Uncheck it only to intentionally apply synthetic corruption.
+- Uploads can be corrupted like samples. Tick **Already corrupted** to lock the corruption controls and send `corruption=none` (restore a damaged image as it is).
 - Sketch sends `file` and `style` (1, 2, or 3). These are categorical conditions; artistic names are not assumed.
 - HTTP 501 and 503 show “Not available yet” without crashing. Other errors can be retried.
 - PNG, JPEG, and WebP uploads are limited to 10 MB. The server still validates image contents. Previews revoke object URLs when replaced or unmounted.

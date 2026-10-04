@@ -30,7 +30,7 @@ export default function InputColumn({ workspace, input, setInput, loading, onRun
   function pickFile(file) {
     const error = validateFile(file); setFileError(error);
     if (error) return;
-    update({ file, sampleId: '', corruption: 'none', alreadyCorrupted: true });
+    update({ file, sampleId: '', corruption: 'none', alreadyCorrupted: false });
     onPreview(null);
   }
   function changeCorruption(corruption) {

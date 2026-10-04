@@ -3,37 +3,73 @@
     "name": "t1_universal_ae",
     "sha256": "5052e4ffef7716e87bb9a2697b1ec66cdf2695111bd33cccc9342427ab591aa9",
     "size": 15922419,
-    "source": "/kaggle/working/runs/task1/20261004-1514_kaggle_t1_final_v2/ckpt_best.pt"
+    "source": "/kaggle/working/runs/task1/20261004-1514_kaggle_t1_final_v2/ckpt_best.pt",
+    "onnx": {
+      "file": "t1_universal_ae.onnx",
+      "sha256": "f75e559538948c92bf7a9d743d53a170b6d1f9ab2cf4185c4dac9f28b26fdb96",
+      "size": 5294509,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t1_universal_ae.onnx"
+    }
   },
   {
     "name": "t2_classifier",
     "sha256": "7d4a9a1f8a073e64e8cc21deec4db98d51ad48dc04eb9b5b4215f49102ece028",
     "size": 1218382,
-    "source": "/kaggle/working/runs/task2_classifier/20261004-1547_kaggle_t2cls_final_t2/ckpt_best.pt"
+    "source": "/kaggle/working/runs/task2_classifier/20261004-1547_kaggle_t2cls_final_t2/ckpt_best.pt",
+    "onnx": {
+      "file": "t2_classifier.onnx",
+      "sha256": "e362fad1735389ac7190ab692f5a029d572582fa3e50196db8eb473c538734b3",
+      "size": 394510,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t2_classifier.onnx"
+    }
   },
   {
     "name": "t2_ae_salt",
     "sha256": "4f8b2edb835c3b967fc8ef4ea1d43a4092841e3bfde4bd583dfb2c3a086eafee",
     "size": 15923059,
-    "source": "/kaggle/working/runs/task2_specialist_salt/20261004-1606_kaggle_t2spec_salt_final_t2/ckpt_best.pt"
+    "source": "/kaggle/working/runs/task2_specialist_salt/20261004-1606_kaggle_t2spec_salt_final_t2/ckpt_best.pt",
+    "onnx": {
+      "file": "t2_ae_salt.onnx",
+      "sha256": "305f7c64d49ab84ef18c6e7e8aa4516e2159be4b6c2923b6809eb6b3ece370f9",
+      "size": 5294509,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t2_ae_salt.onnx"
+    }
   },
   {
     "name": "t2_ae_blur",
     "sha256": "0d2aede1d0636d4f65115b2c0d064319cc7a0fd22b55a24fdf9d1af9a750d74c",
     "size": 15923059,
-    "source": "/kaggle/working/runs/task2_specialist_blur/20261004-1609_kaggle_t2spec_blur_final_t2/ckpt_best.pt"
+    "source": "/kaggle/working/runs/task2_specialist_blur/20261004-1609_kaggle_t2spec_blur_final_t2/ckpt_best.pt",
+    "onnx": {
+      "file": "t2_ae_blur.onnx",
+      "sha256": "83e24ee301489918dae3f4e11cee5a2aef48c16601c208c8415266bb1a4369a5",
+      "size": 5294509,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t2_ae_blur.onnx"
+    }
   },
   {
     "name": "t2_ae_occlusion",
     "sha256": "d8e82568179939796c1461265bed6af9412f5a727f6093bcc2b9370c2b64e1b4",
     "size": 15923059,
-    "source": "/kaggle/working/runs/task2_specialist_occlusion/20261004-1614_kaggle_t2spec_occlusion_final_t2/ckpt_best.pt"
+    "source": "/kaggle/working/runs/task2_specialist_occlusion/20261004-1614_kaggle_t2spec_occlusion_final_t2/ckpt_best.pt",
+    "onnx": {
+      "file": "t2_ae_occlusion.onnx",
+      "sha256": "ef7d428effa2fe46fd7d17415b0adce0dd61ec01b624488941a521f5d250fbdb",
+      "size": 5294509,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t2_ae_occlusion.onnx"
+    }
   },
   {
     "name": "t4_generator",
     "sha256": "7855ae4ab06f668598b70e6148398beab8e9417cd1357502cb504c9edf52ebdd",
     "size": 76799299,
-    "source": "artifacts\\promote_t4\\t4_generator.pt"
+    "source": "artifacts\\promote_t4\\t4_generator.pt",
+    "onnx": {
+      "file": "t4_generator.onnx",
+      "sha256": "43ff9429272867a6131ca2bebb35c6aad595aef60f7d09718549eff33815ad99",
+      "size": 76797904,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t4_generator.onnx"
+    }
   },
   {
     "name": "t4_discriminator",
@@ -45,6 +81,12 @@
     "name": "t3_soft_moe",
     "sha256": "767c08ba45511746cfe02ae61a28349dc249c4b173c42bdf68426075c1702a29",
     "size": 48938975,
-    "source": "/kaggle/working/runs/task3/20261004-2005_kaggle_t3moe_final_t3/ckpt_best.pt"
+    "source": "/kaggle/working/runs/task3/20261004-2005_kaggle_t3moe_final_t3/ckpt_best.pt",
+    "onnx": {
+      "file": "t3_soft_moe.onnx",
+      "sha256": "3be01e2053bd92db77a89447808459f9b230fc92f9800c56f862d1501dbd46b9",
+      "size": 16284865,
+      "url": "https://github.com/AhmedLaiq34/genai-assignment-1/releases/download/models-v1/t3_soft_moe.onnx"
+    }
   }
 ]
