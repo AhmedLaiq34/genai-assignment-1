@@ -1,0 +1,18 @@
+{
+  "name": "t4_generator",
+  "onnx_file": "t4_generator.onnx",
+  "onnx_sha256": "43ff9429272867a6131ca2bebb35c6aad595aef60f7d09718549eff33815ad99",
+  "source_checkpoint": "models/checkpoints/t4_generator.pt",
+  "checkpoint_sha256": "7855ae4ab06f668598b70e6148398beab8e9417cd1357502cb504c9edf52ebdd",
+  "run_id": "20261004-1921_kaggle_t4_final_t4",
+  "global_step": 6384,
+  "smoke": false,
+  "opset": 17,
+  "model_config": {
+    "base_channels": 64,
+    "style_dim": 32,
+    "dropout": 0.29338252123610636,
+    "num_styles": 3
+  },
+  "parameters": 19196705
+}

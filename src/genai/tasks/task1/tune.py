@@ -101,16 +101,33 @@ def run_study(cfg: dict, on_checkpoint=None) -> Path:
 
     db_path = _storage_path(cfg)
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    storage = f"sqlite:///{db_path.as_posix()}"
     ps = cfg["pruner"]
+
+    # How many trials the DB already holds (0 for a new study). Used for the sampler seed below.
+    try:
+        n_existing = len(optuna.load_study(study_name=cfg["study"], storage=storage).trials)
+    except KeyError:                                          # study does not exist yet
+        n_existing = 0
+
     study = optuna.create_study(
         study_name=cfg["study"],
-        storage=f"sqlite:///{db_path.as_posix()}",
+        storage=storage,
         load_if_exists=True,                                  # restart-safe
         direction="minimize",                                 # J: lower is better
-        sampler=optuna.samplers.TPESampler(seed=cfg["sampler"]["seed"]),
+        # seed + number of existing trials: a fresh study is reproducible (seed 42), and a RESUMED
+        # study does not re-draw the same first random parameters it already tried (decision D19).
+        sampler=optuna.samplers.TPESampler(seed=int(cfg["sampler"]["seed"]) + n_existing),
         pruner=optuna.pruners.MedianPruner(n_startup_trials=ps["n_startup_trials"],
                                            n_warmup_steps=ps["n_warmup_steps"]),
     )
+
+    # Only one process ever writes this study (CONTRACTS 3.13), so a trial still marked RUNNING at
+    # start-up belongs to a process that was killed or crashed. Mark it FAIL so it is not left dangling.
+    for t in study.trials:
+        if t.state == optuna.trial.TrialState.RUNNING:
+            study.tell(t.number, state=optuna.trial.TrialState.FAIL)
+            print(f"trial {t.number} was left RUNNING by an interrupted process -> marked FAIL")
 
     def objective(trial: optuna.Trial) -> float:
         values = suggest_params(trial, cfg["tuned_params"])
@@ -134,7 +151,11 @@ def run_study(cfg: dict, on_checkpoint=None) -> Path:
         if on_checkpoint is not None:
             on_checkpoint(db_path)
 
-    already = len([t for t in study.trials if t.state.is_finished()])
+    # The budget counts trials that produced an answer (COMPLETE or PRUNED). A FAILED trial (crash,
+    # network error) is not an answer about its parameters, so it does not use up the budget and the
+    # study runs another trial instead (decision D19). Failed trials stay in the DB and are reported.
+    answered = (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
+    already = len([t for t in study.trials if t.state in answered])
     study.optimize(objective, n_trials=max(int(n_trials) - already, 0), callbacks=[after_trial])
 
     out_dir = resolve(cfg["study_dir"])

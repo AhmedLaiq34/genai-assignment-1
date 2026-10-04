@@ -84,3 +84,44 @@ def test_from_config_ignores_unknown_keys_and_bad_depth():
     assert m.hparams["depth"] == 3
     with pytest.raises(ValueError):
         UniversalAE(depth=8)   # 128 is not divisible by 2**8
+
+
+# ---- conv latent (decision D40): a 1x1-conv latent grid instead of flatten + Linear ----
+def conv_ae(**kw):
+    args = dict(base_channels=8, depth=3, bottleneck_dim=1024, dropout=0.0, latent="conv")
+    args.update(kw)
+    return UniversalAE(**args)
+
+
+def test_conv_latent_shapes_and_total_values():
+    m = conv_ae(bottleneck_dim=1024)                 # depth 3 -> 16x16 grid -> 1024 / 256 = 4 latent channels
+    x = torch.rand(2, 3, 128, 128)
+    z = m.encode(x)
+    assert z.shape == (2, 4, 16, 16) and z[0].numel() == 1024
+    y = m(x)
+    assert y.shape == x.shape and 0.0 <= float(y.min()) and float(y.max()) <= 1.0
+    assert compression_info(m)["compression_ratio"] == pytest.approx(48.0)
+
+
+def test_conv_latent_has_no_dense_layer_and_no_skip_path():
+    m = conv_ae()
+    assert not any(isinstance(mod, torch.nn.Linear) for mod in m.modules())
+    x = torch.rand(1, 3, 128, 128)
+    # the output is a function of z only: decoding the encoded latent equals the forward pass
+    m.eval()
+    assert torch.allclose(m(x), m.decode(m.encode(x)))
+
+
+def test_conv_latent_needs_a_multiple_of_the_grid_size_and_rejects_unknown_kind():
+    with pytest.raises(ValueError, match="multiple"):
+        conv_ae(bottleneck_dim=1000)
+    with pytest.raises(ValueError, match="latent"):
+        UniversalAE(latent="vector")
+
+
+def test_conv_latent_survives_a_config_round_trip_and_old_configs_stay_dense():
+    m = conv_ae()
+    rebuilt = UniversalAE.from_config(m.hparams)
+    assert rebuilt.latent == "conv" and rebuilt.latent_channels == m.latent_channels
+    old = UniversalAE.from_config({"base_channels": 8, "depth": 4, "bottleneck_dim": 32, "dropout": 0.0})  # no "latent" key
+    assert old.latent == "dense"

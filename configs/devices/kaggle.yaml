@@ -2,4 +2,4 @@ device: kaggle
 data_root: /kaggle/input
 output_root: /kaggle/working
 persist_root: /kaggle/working
-num_workers: 2   # TODO confirm on actual instance
+num_workers: 2   # Kaggle notebooks have 4 CPU cores; 2 loader workers (Linux, so no Windows worker problem)

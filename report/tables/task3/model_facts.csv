@@ -1,0 +1,30 @@
+item,value
+"parameters, total",4065717
+"parameters, gate",98196
+"parameters, expert salt",1322507
+"parameters, expert blur",1322507
+"parameters, expert occlusion",1322507
+tau,3.644553588637853
+branches,"identity, salt, blur, occlusion"
+lambda_1,0.403450921478546
+lambda_s,0.596549078521454
+lambda_c,0.01984705741660534
+lambda_b,0.013362875320023589
+warmup_lr,0.0002
+joint_lr,7.328097194130305e-05
+warmup_epochs,1
+joint_epochs,8
+threshold: dominant_min_weight,0.95
+threshold: distributed_max_weight,0.6
+threshold: inactive_mean_weight,0.02
+threshold: unrelated_mean_weight,0.5
+collapse thresholds,"{""min_mean_weight"": 0.02, ""max_foreign_weight"": 0.9}"
+T3 checkpoint sha256,767c08ba45511746cfe02ae61a28349dc249c4b173c42bdf68426075c1702a29
+run id,20261004-2005_kaggle_t3moe_final_t3
+split,val
+rows evaluated,2944
+source sha256: classifier,7d4a9a1f8a073e64e8cc21deec4db98d51ad48dc04eb9b5b4215f49102ece028
+source sha256: salt,4f8b2edb835c3b967fc8ef4ea1d43a4092841e3bfde4bd583dfb2c3a086eafee
+source sha256: blur,0d2aede1d0636d4f65115b2c0d064319cc7a0fd22b55a24fdf9d1af9a750d74c
+source sha256: occlusion,d8e82568179939796c1461265bed6af9412f5a727f6093bcc2b9370c2b64e1b4
+source sha256: t1,5052e4ffef7716e87bb9a2697b1ec66cdf2695111bd33cccc9342427ab591aa9

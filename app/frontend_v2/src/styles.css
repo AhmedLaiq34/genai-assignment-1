@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply m-0 bg-canvas font-sans text-ink antialiased; }
+  button, input, select { @apply font-sans; }
+  button, a, input, summary { @apply outline-offset-4; }
+  :focus-visible { @apply outline outline-2 outline-brand; }
+  button:disabled { @apply cursor-not-allowed opacity-50; }
+  input[type='number'] { @apply w-full min-w-0 rounded-control border border-line bg-surface px-3 py-2; }
+  input[type='checkbox'], input[type='radio'] { @apply accent-brand; }
+  h1, h2, h3, p { @apply m-0; }
+}
+@layer components {
+  .card { @apply min-w-0 rounded-card bg-surface p-panel shadow-card; }
+  .button { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors; }
+  .button-primary { @apply bg-brand text-white shadow-button hover:bg-brand-dark; }
+  .button-secondary { @apply bg-wash text-brand-dark hover:bg-brand-light; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-wide text-muted; }
+  .field-label { @apply mb-2 block text-sm font-medium text-muted; }
+  .studio-grid { @apply grid items-start gap-gutter lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]; }
+  .stack { @apply flex min-w-0 flex-col gap-gutter; }
+  .image-empty { @apply flex aspect-square flex-col items-center justify-center gap-3 bg-wash p-6 text-center text-sm text-muted; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

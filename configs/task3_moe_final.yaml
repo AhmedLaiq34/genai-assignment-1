@@ -1,0 +1,134 @@
+# Final Task 3 config written by genai.tasks.task3.tune.write_final_config (best trial of the study).
+# Train with:  python scripts/train.py --task t3 --config <this file>
+task: t3
+component: soft_moe
+seed: 42
+data_config: configs/data_pets.yaml
+run:
+  desc: t3moe
+  smoke: false
+  project: genai-a1
+sources:
+  dir: null
+model:
+  tau: 3.644553588637853
+train:
+  batch_size: 64
+  warmup_epochs: 1
+  joint_epochs: 8
+  warmup_lr: 0.0002
+  joint_lr: 7.328097194130305e-05
+  weight_decay: 0.0001
+  lambda_1: 0.403450921478546
+  lambda_s: 0.596549078521454
+  lambda_c: 0.01984705741660534
+  lambda_b: 0.013362875320023589
+  amp: true
+  scheduler: cosine
+  grad_clip: null
+  train_subset: null
+  val_subset: null
+  val_every_epochs: 2
+  val_batch_size: 64
+  val_workers: 0
+  epoch0_validation: true
+  checkpoint_every_minutes: 10
+  log_every_steps: 20
+  sample_every_epochs: 2
+  max_steps: null
+  pause_after_steps: null
+collapse:
+  min_mean_weight: 0.02
+  max_foreign_weight: 0.9
+study: t3_moe
+objective: J = 0.5*L1 + 0.5*(1-SSIM) on the val manifest (minimise), collapse pruning
+n_trials: 10
+timeout_minutes: 9
+epochs_per_trial:
+  warmup: 1
+  joint: 2
+trial_val_subset: 736
+trial_train_subset: null
+sampler:
+  name: TPE
+  seed: 42
+pruner:
+  name: Median
+  n_startup_trials: 3
+  n_warmup_steps: 2
+enqueue_pdf_start: true
+storage: artifacts/optuna/t3_moe.db
+study_dir: studies/t3_moe
+budget:
+  max_minutes: 22
+eval:
+  max_rows: null
+  batch_size: 64
+  n_examples: 8
+search_space_status: PROVISIONAL
+tuned_params:
+- name: joint_lr
+  type: float
+  low: 1.0e-05
+  high: 0.0002
+  log: true
+- name: tau
+  type: float
+  low: 0.5
+  high: 5.0
+  log: true
+- name: lambda_c
+  type: float
+  low: 0.01
+  high: 1.0
+  log: true
+- name: lambda_b
+  type: float
+  low: 0.001
+  high: 0.1
+  log: true
+- name: recon_l1_share
+  type: float
+  low: 0.3
+  high: 0.95
+  log: false
+final_config_source:
+  study: t3_moe
+  best_trial: 7
+  best_value: 0.09692070159539783
+  best_params:
+    joint_lr: 7.328097194130305e-05
+    tau: 3.644553588637853
+    lambda_c: 0.01984705741660534
+    lambda_b: 0.013362875320023589
+    recon_l1_share: 0.403450921478546
+  best_val_J_per_epoch:
+  - 0.09816077750102799
+  - 0.09743136916222284
+  - 0.09692070159539783
+  best_mean_w_by_class:
+  - - 0.8049144744873047
+    - 0.034583646804094315
+    - 0.0552351251244545
+    - 0.10526671260595322
+  - - 0.01558193564414978
+    - 0.9642963409423828
+    - 0.0036846131552010775
+    - 0.016437094658613205
+  - - 0.2795245051383972
+    - 0.008818943053483963
+    - 0.6724178194999695
+    - 0.03923872858285904
+  - - 0.14317995309829712
+    - 0.03192116692662239
+    - 0.02104008197784424
+    - 0.8038588762283325
+  trial_0:
+    state: FAIL
+    value: null
+    params:
+      joint_lr: 5.0e-05
+      tau: 1.0
+      lambda_c: 0.1
+      lambda_b: 0.01
+      recon_l1_share: 0.8

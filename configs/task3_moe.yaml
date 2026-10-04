@@ -1,15 +1,97 @@
-# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
+# Task 3: jointly trained soft mixture of experts (gate + identity branch + three experts).
+# Implements CONTRACTS 3.5, 3.6, 3.8, 3.13; design in docs/TASK3_PLAN.md (B1 to B19, sections C and D5).
+# Device keys (device, data_root, output_root, persist_root, num_workers) are merged in from
+# configs/devices/<profile>.yaml by scripts/*.py and by genai.tasks.task1.config.load_config.
+#
+# BUDGETS (every value marked "RECOMMENDATION, approved ...") come from plan section C: estimates scaled from the
+# measured Task 2 Kaggle speeds, approved by the student on 2026-10-05. The `prepare` stage of the Kaggle runner
+# prints the measured seconds per step and the projected minutes; the cut order if it is slower is in plan section C.
+# Everything marked PROVISIONAL is a starting point (ranges are checked by the G2 quick check before the real run).
+
+task: t3
+component: soft_moe             # KEEP: written into every checkpoint config (decision B11)
+seed: 42
+data_config: configs/data_pets.yaml     # file names of split / manifests (see data_pets.yaml)
+
+run:
+  desc: t3moe           # short description used in run_id = <YYYYmmdd-HHMM>_<device>_<desc>
+  smoke: false          # true -> run_id gets the suffix _smoke and the run must never be promoted
+                        # (also switched on automatically when a Task 2 source checkpoint is a smoke checkpoint)
+  project: genai-a1     # tracker project (group = task3)
+
+# ---- where the four Task 2 checkpoints are (read-only, sha256 checked against the real Task 2 hashes) ----
+# search order: sources.dir -> data_root (recursive; Kaggle input) -> models/checkpoints. null = no explicit folder.
+# `expected_sha256` (a {classifier, salt, blur, occlusion} map) is only for tests with fixture checkpoints; leave it out.
+sources:
+  dir: null
+
+# ---- model: the gate, the experts and their sizes are copied from the Task 2 checkpoints; only tau is set here ----
+model:
+  tau: 1.0              # PROVISIONAL: softmax temperature (fixed per run, decision B3); the study tunes it, tau = 1 is the plain softmax
+
+# ---- training (final training uses the study's best values; these are PROVISIONAL starting values) ----
+train:
+  batch_size: 64        # decision B10: 16 images per class, fixed (not tuned); MUST be a multiple of 4
+  warmup_epochs: 1      # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): final training = 1 warm-up epoch ...
+  joint_epochs: 8       # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): ... + 8 joint epochs
+  warmup_lr: 2.0e-4     # PROVISIONAL: constant lr of the gate in the warm-up (about 1/10 of the classifier's final lr 2.18e-3)
+  joint_lr: 5.0e-5      # PROVISIONAL: ONE lr for gate + experts, cosine over the joint steps (tuned; PDF start = middle of its range)
+  weight_decay: 1.0e-4  # AdamW, the specialists' value (not tuned)
+  lambda_1: 0.8         # PDF start value; = r, tuned as recon_l1_share. lambda_1 + lambda_s must be 1 (decision B8)
+  lambda_s: 0.2         # PDF start value; = 1 - r
+  lambda_c: 0.1         # PDF start value (cross-entropy on the raw gate logits)
+  lambda_b: 0.01        # PDF start value (balance loss)
+  amp: true             # fp16 autocast on the GPU (ignored on CPU); losses stay float32
+  scheduler: cosine     # joint stage only; cosine | none
+  grad_clip: null
+  train_subset: null    # use only the first N train images (smoke runs / dry runs)
+  val_subset: null      # KEEP (scripts/tune.py --dry-run reads it): first N val manifest rows (multiple of 4); null = all 2,944
+  val_every_epochs: 2   # D100: validate every 2nd epoch (the last epoch is always validated); was 1 - the cut list of plan section C may set 2 for the final run
+  val_batch_size: 64
+  val_workers: 0        # val data is loaded in the main process (each worker costs ~0.5 GB RAM on Windows)
+  epoch0_validation: true   # fresh runs write an `epoch: 0` row (the untrained Task 2 copy); the study switches it off for trials
+  checkpoint_every_minutes: 10
+  log_every_steps: 20
+  sample_every_epochs: 2    # sample grid: target | input | x_hat | |error| x4 for 8 fixed validation rows
+  max_steps: null       # optional hard cap on optimiser steps (smoke runs / dry runs)
+  pause_after_steps: null   # stop early WITHOUT changing the schedule (tests of resume)
+
+# ---- routing-collapse thresholds (decision B16, CONTRACTS 3.6: recommendations, stated in the report) ----
+collapse:
+  min_mean_weight: 0.02     # a branch with a smaller mean weight over the validation rows counts as dead
+  max_foreign_weight: 0.9   # a branch with a larger mean weight on rows of ANOTHER true class takes them over
+
+# ---- Optuna study (CONTRACTS 3.13, decision B17) ----
 study: t3_moe
-objective: "J = 0.5*L1 + 0.5*(1-SSIM) (minimise) + collapse pruning"
-n_trials: TBD_AFTER_BENCHMARK
-epochs: TBD_AFTER_BENCHMARK
-sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
-pruner: Median
-storage: artifacts/optuna/t3_moe.db   # promoted to studies/t3_moe.db when complete
-initial_values: {lambda_1: 0.8, lambda_s: 0.2, lambda_c: 0.1, lambda_b: 0.01}   # PDF-given starting points, to be investigated not accepted
+objective: "J = 0.5*L1 + 0.5*(1-SSIM) on the val manifest (minimise), collapse pruning"
+n_trials: 10                 # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): answered trials (COMPLETE or PRUNED) ...
+timeout_minutes: 9           # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): ... or this many minutes, whichever comes first
+epochs_per_trial: {warmup: 1, joint: 2}   # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): one counter, warm-up epochs first
+trial_val_subset: 736        # RECOMMENDATION, approved by the student on 2026-10-05 (D99): first 736 val rows = 184 whole images per class
+trial_train_subset: null     # KEEP (scripts/tune.py --dry-run reads it): optional training subset for trials; null = all
+sampler: {name: TPE, seed: 42}
+# Pruning is possible from step 2 (= the end of the first joint epoch, steps count warm-up epochs too). PROVISIONAL until
+# the G2 quick check shows one real learning curve (lesson of Task 1: look at a curve before trusting the warm-up).
+pruner: {name: Median, n_startup_trials: 3, n_warmup_steps: 2}   # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): fewer trials, so fewer start-up trials
+enqueue_pdf_start: true      # trial 0 = the PDF's starting values (lambda_1 0.8, lambda_s 0.2, lambda_c 0.1, lambda_b 0.01, tau 1, joint_lr 5e-5)
+storage: artifacts/optuna/t3_moe.db    # copied to persist_root after every trial
+study_dir: studies/t3_moe              # trials.csv + plots + study_run.json
+budget:
+  max_minutes: 22            # REDUCED by the student's 20-25 minute cap, 2026-10-05 (D100; D99 was the first approval): the Kaggle `prepare` stage stops if the projected run is longer
+
+# ---- evaluation (used by evaluate_task3) ----
+eval:
+  max_rows: null             # null = the whole val manifest
+  batch_size: 64
+  n_examples: 8              # rows in each examples figure
+
+# PROVISIONAL search space (decision B18; the PDF start values lie inside every range).
+# `name` -> where it goes in the config is defined in genai/tasks/task3/tune.py (PARAM_TARGETS).
+# recon_l1_share r sets lambda_1 = r and lambda_s = 1 - r. tau above 1 is needed for useful gradients (the gate is very confident).
+search_space_status: PROVISIONAL
 tuned_params:
-  - {name: joint_lr, range: TBD_AFTER_BENCHMARK}
-  - {name: tau, range: TBD_AFTER_BENCHMARK}
-  - {name: lambda_c, range: TBD_AFTER_BENCHMARK}
-  - {name: lambda_b, range: TBD_AFTER_BENCHMARK}
-  - {name: recon_weighting, range: TBD_AFTER_BENCHMARK}
+  - {name: joint_lr,       type: float, low: 1.0e-5, high: 2.0e-4, log: true}
+  - {name: tau,            type: float, low: 0.5,    high: 5.0,    log: true}
+  - {name: lambda_c,       type: float, low: 0.01,   high: 1.0,    log: true}
+  - {name: lambda_b,       type: float, low: 0.001,  high: 0.1,    log: true}
+  - {name: recon_l1_share, type: float, low: 0.3,    high: 0.95,   log: false}

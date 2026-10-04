@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -45,6 +46,20 @@ def _find_dir(root: Path, *parts: str) -> Path:
     for c in candidates:
         if c.is_dir():
             return c
+    # Kaggle can nest a dataset deeper (e.g. /kaggle/input/datasets/<owner>/<name>/data/...):
+    # walk down a few levels (sorted, so the choice is deterministic).
+    if root.is_dir():
+        wanted = "/".join(parts)
+        root_depth = len(root.parts)
+        hits = []
+        for dirpath, dirnames, _files in os.walk(root):
+            dirnames.sort()
+            if len(Path(dirpath).parts) - root_depth >= 8:      # do not walk forever
+                dirnames[:] = []
+            if Path(dirpath).as_posix().endswith("/" + wanted):
+                hits.append(Path(dirpath))
+        if hits:
+            return hits[0]
     return candidates[0]  # not found: return the expected place so the error message is clear
 
 

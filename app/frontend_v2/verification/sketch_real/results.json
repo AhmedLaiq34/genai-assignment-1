@@ -1,0 +1,15 @@
+{
+  "base": "http://localhost:8080",
+  "checks": [
+    "Sample photo + Style 1: real sketch returned, caption \"Style 1\", download link shown.",
+    "Styles 1, 2 and 3 of the same photo give three different sketches; the captions read Style 1/2/3 (backend style_label).",
+    "Uploaded photo: sketch generated.",
+    "Download gives a PNG (sketch-result.png).",
+    "No uncaught browser page errors."
+  ],
+  "details": {
+    "sampleCount": 6,
+    "downloadName": "sketch-result.png"
+  },
+  "pageErrors": []
+}

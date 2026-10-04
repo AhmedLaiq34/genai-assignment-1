@@ -1,8 +1,8 @@
-"""FastAPI backend (CONTRACTS 3.10). Implemented now: health, samples, /api/universal.
-/api/hard, /api/soft and /api/sketch answer 501 until their models exist.
+"""FastAPI backend (CONTRACTS 3.10). Implemented now: health, samples, /api/universal, /api/hard,
+/api/soft, /api/sketch.
 
 Run locally from app/backend:  uvicorn app.main:app --port 8000
-Env: MODELS_DIR (folder with the .onnx files), SAMPLES_DIR, MAX_UPLOAD_MB.
+Env: MODELS_DIR (folder with the .onnx files), SAMPLES_DIR, SAMPLES_SKETCH_DIR, MAX_UPLOAD_MB.
 """
 from __future__ import annotations
 
@@ -24,11 +24,15 @@ from fastapi.responses import FileResponse, JSONResponse
 from genai.common import constants as C
 from genai.pets import corruptions  # the SAME code used to train; never re-implemented here
 
+from . import hard as hard_routing  # classifier -> expert pipeline of /api/hard
+from . import sketch as sketch_routing  # style-conditioned generator of /api/sketch
+from . import soft as soft_routing  # gate + four branches in one ONNX model of /api/soft
 from .preprocess import BadImage, preprocess_bytes, to_png_bytes
 
 HERE = Path(__file__).resolve().parent
 MODELS_DIR = Path(os.environ.get("MODELS_DIR", HERE.parent.parent.parent / "models" / "onnx"))
 SAMPLES_DIR = Path(os.environ.get("SAMPLES_DIR", HERE.parent / "samples"))
+SAMPLES_SKETCH_DIR = Path(os.environ.get("SAMPLES_SKETCH_DIR", HERE.parent / "samples_sketch"))
 MAX_UPLOAD_BYTES = int(float(os.environ.get("MAX_UPLOAD_MB", "10")) * 1024 * 1024)
 
 CORRUPTION_IDS = {"none": 0, "salt_pepper": 1, "gaussian_blur": 2, "occlusion": 3}
@@ -191,30 +195,35 @@ async def read_input(file: Optional[UploadFile], sample_id: Optional[str]) -> by
     raise HTTPException(400, "Send an image as 'file' or choose a 'sample_id'.")
 
 
-@app.post("/api/universal")
-async def universal(
-    file: Optional[UploadFile] = File(None),
-    sample_id: Optional[str] = Form(None),
-    corruption: str = Form("none"),
-    severity: str = Form("medium"),
-    params: Optional[str] = Form(None),
-    seed: int = Form(42),
-):
-    """Preprocess -> (optional corruption) -> universal autoencoder -> PNGs."""
+# --------------------------------------------------------------------------------------
+# Shared by /api/universal and /api/hard: the form fields, the upload / sample handling,
+# the preprocessing and the optional corruption are ONE code path (never copied).
+# --------------------------------------------------------------------------------------
+def check_fields(corruption: str, severity: str, params: Optional[str]) -> Optional[dict]:
+    """Validate the form fields (422 on error). Returns the custom params dict, or None."""
     if corruption not in CORRUPTION_IDS:
         raise HTTPException(422, f"corruption must be one of {list(CORRUPTION_IDS)}.")
     if severity not in C.SEVERITY_NAMES:
         raise HTTPException(422, f"severity must be one of {list(C.SEVERITY_NAMES)}.")
-    custom = None
-    if params:
-        try:
-            custom = json.loads(params)
-            if not isinstance(custom, dict):
-                raise ValueError
-        except ValueError:
-            raise HTTPException(422, "'params' must be a JSON object.")
-    session = get_session("t1_universal")  # 503 if the model file is missing
+    if not params:
+        return None
+    try:
+        custom = json.loads(params)
+        if not isinstance(custom, dict):
+            raise ValueError
+    except ValueError:
+        raise HTTPException(422, "'params' must be a JSON object.")
+    return custom
 
+
+async def prepare_input(file: Optional[UploadFile], sample_id: Optional[str], corruption: str,
+                        severity: str, custom: Optional[dict], seed: int):
+    """Read the image, preprocess it, and corrupt it if a corruption was selected.
+
+    Returns (img01, applied, t0, t1): the float32 [3,128,128] image in [0,1] (after the
+    corruption), the corruption params that were applied, and two time marks (start and end
+    of this step, from time.perf_counter) so the endpoints can report the preprocess time.
+    """
     t0 = time.perf_counter()
     data = await read_input(file, sample_id)
     try:
@@ -226,17 +235,40 @@ async def universal(
         rng = np.random.default_rng(seed)
         applied = build_params(corruption, severity, custom, rng)
         img01 = corruptions.apply(torch.from_numpy(img01), applied, rng).numpy()
-    t1 = time.perf_counter()
+    return img01, applied, t0, time.perf_counter()
 
-    out = session.run(None, {session.get_inputs()[0].name: img01[None]})[0][0]  # [3,128,128]
-    t2 = time.perf_counter()
 
+def image_fields(img01: np.ndarray, out: np.ndarray, corruption: str, applied: dict, seed: int) -> dict:
+    """The response fields that /api/universal and /api/hard have in common."""
     return {
         "input_png_b64": _b64(to_png_bytes(img01)),  # after corruption
         "output_png_b64": _b64(to_png_bytes(out)),
         "corruption_applied": corruption,
         "params": applied,
         "seed": seed,
+    }
+
+
+@app.post("/api/universal")
+async def universal(
+    file: Optional[UploadFile] = File(None),
+    sample_id: Optional[str] = Form(None),
+    corruption: str = Form("none"),
+    severity: str = Form("medium"),
+    params: Optional[str] = Form(None),
+    seed: int = Form(42),
+):
+    """Preprocess -> (optional corruption) -> universal autoencoder -> PNGs."""
+    custom = check_fields(corruption, severity, params)
+    session = get_session("t1_universal")  # 503 if the model file is missing
+
+    img01, applied, t0, t1 = await prepare_input(file, sample_id, corruption, severity, custom, seed)
+
+    out = session.run(None, {session.get_inputs()[0].name: img01[None]})[0][0]  # [3,128,128]
+    t2 = time.perf_counter()
+
+    return {
+        **image_fields(img01, out, corruption, applied, seed),
         "timing_ms": {
             "preprocess": round((t1 - t0) * 1000, 2),
             "inference": round((t2 - t1) * 1000, 2),
@@ -245,23 +277,110 @@ async def universal(
     }
 
 
-# --------------------------------------------------------------------------------------
-# Not implemented yet (Tasks 2-4). Clear 501 so the frontend can show a message.
-# --------------------------------------------------------------------------------------
-def _not_implemented(name: str) -> JSONResponse:
-    return JSONResponse(status_code=501, content={"detail": f"/api/{name} is not implemented yet."})
-
-
 @app.post("/api/hard")
-def hard():
-    return _not_implemented("hard")
+async def hard(
+    file: Optional[UploadFile] = File(None),
+    sample_id: Optional[str] = Form(None),
+    corruption: str = Form("none"),
+    severity: str = Form("medium"),
+    params: Optional[str] = Form(None),
+    seed: int = Form(42),
+):
+    """Preprocess -> (optional corruption) -> classifier -> identity bypass or one specialist."""
+    custom = check_fields(corruption, severity, params)
+    get_session("t2_classifier")  # 503 early if the classifier file is missing (specialist: later)
+
+    img01, applied, t0, t1 = await prepare_input(file, sample_id, corruption, severity, custom, seed)
+
+    out, routing, ms = hard_routing.run_hard(img01, get_session)  # see hard.py
+    return {
+        **image_fields(img01, out, corruption, applied, seed),
+        **routing,  # probs, predicted, predicted_id, expert, identity_bypass
+        "timing_ms": {
+            "preprocess": round((t1 - t0) * 1000, 2),
+            "classifier": ms["classifier"],
+            "expert": ms["expert"],  # 0.0 when the identity bypass was used
+            "total": round((time.perf_counter() - t0) * 1000, 2),
+        },
+    }
 
 
+# --------------------------------------------------------------------------------------
+# /api/soft (Task 3): soft mixture of experts. One ONNX model returns the restored image and
+# the four branch weights (identity, salt, blur, occlusion). Helpers: soft.py.
+# --------------------------------------------------------------------------------------
 @app.post("/api/soft")
-def soft():
-    return _not_implemented("soft")
+async def soft(
+    file: Optional[UploadFile] = File(None),
+    sample_id: Optional[str] = Form(None),
+    corruption: str = Form("none"),
+    severity: str = Form("medium"),
+    params: Optional[str] = Form(None),
+    seed: int = Form(42),
+):
+    """Preprocess -> (optional corruption) -> soft mixture of experts -> PNGs + four weights."""
+    custom = check_fields(corruption, severity, params)
+    get_session("t3_soft_moe")  # 503 early if the model file is missing
+
+    img01, applied, t0, t1 = await prepare_input(file, sample_id, corruption, severity, custom, seed)
+
+    out, routing, ms = soft_routing.run_soft(img01, get_session)  # see soft.py
+    return {
+        **image_fields(img01, out, corruption, applied, seed),
+        **routing,  # weights, dominant, dominant_id, ranking
+        "timing_ms": {
+            "preprocess": round((t1 - t0) * 1000, 2),
+            "inference": ms["inference"],
+            "total": round((time.perf_counter() - t0) * 1000, 2),
+        },
+    }
+
+
+# --------------------------------------------------------------------------------------
+# /api/sketch (Task 4): face photo + style 1..3 -> grayscale sketch. Helpers: sketch.py.
+# --------------------------------------------------------------------------------------
+@app.get("/api/sketch/samples")
+def list_sketch_samples():
+    return [{"id": i, "url": f"/api/sketch/samples/{i}"} for i in sketch_routing.sample_ids(SAMPLES_SKETCH_DIR)]
+
+
+@app.get("/api/sketch/samples/{sample_id}")
+def get_sketch_sample(sample_id: str):
+    return FileResponse(sketch_routing.sample_path(SAMPLES_SKETCH_DIR, sample_id), media_type="image/png")
 
 
 @app.post("/api/sketch")
-def sketch():
-    return _not_implemented("sketch")
+async def sketch(
+    file: Optional[UploadFile] = File(None),
+    sample_id: Optional[str] = Form(None),  # an id of /api/sketch/samples
+    style: int = Form(...),  # 1, 2 or 3; a missing or non-integer value is a 422 from FastAPI
+):
+    """Preprocess -> generator(photo, style) -> grayscale sketch PNG. An upload is never corrupted."""
+    style_id = sketch_routing.check_style(style)
+    session = get_session("t4_generator")  # 503 if the model file is missing
+
+    t0 = time.perf_counter()
+    if sample_id:  # same upload rules as the other endpoints, but the id names a face sample
+        if file is not None:
+            raise HTTPException(400, "Send either 'file' or 'sample_id', not both.")
+        data = sketch_routing.sample_path(SAMPLES_SKETCH_DIR, sample_id).read_bytes()
+    else:
+        data = await read_input(file, None)
+    try:
+        img01 = preprocess_bytes(data)  # float32 [3,128,128] in [0,1]
+    except BadImage as e:
+        raise HTTPException(415, str(e))
+    t1 = time.perf_counter()
+
+    sketch_png, inference_ms = sketch_routing.run_sketch(img01, style_id, session)
+    return {
+        "photo_png_b64": _b64(to_png_bytes(img01)),  # the preprocessed 128x128 input
+        "sketch_png_b64": _b64(sketch_png),
+        "style_id": style_id,
+        "style_label": f"Style {style}",
+        "timing_ms": {
+            "preprocess": round((t1 - t0) * 1000, 2),
+            "inference": inference_ms,
+            "total": round((time.perf_counter() - t0) * 1000, 2),
+        },
+    }

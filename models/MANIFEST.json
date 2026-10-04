@@ -1,1 +1,50 @@
-{"version":1,"models":[]}
+[
+  {
+    "name": "t1_universal_ae",
+    "sha256": "5052e4ffef7716e87bb9a2697b1ec66cdf2695111bd33cccc9342427ab591aa9",
+    "size": 15922419,
+    "source": "/kaggle/working/runs/task1/20261004-1514_kaggle_t1_final_v2/ckpt_best.pt"
+  },
+  {
+    "name": "t2_classifier",
+    "sha256": "7d4a9a1f8a073e64e8cc21deec4db98d51ad48dc04eb9b5b4215f49102ece028",
+    "size": 1218382,
+    "source": "/kaggle/working/runs/task2_classifier/20261004-1547_kaggle_t2cls_final_t2/ckpt_best.pt"
+  },
+  {
+    "name": "t2_ae_salt",
+    "sha256": "4f8b2edb835c3b967fc8ef4ea1d43a4092841e3bfde4bd583dfb2c3a086eafee",
+    "size": 15923059,
+    "source": "/kaggle/working/runs/task2_specialist_salt/20261004-1606_kaggle_t2spec_salt_final_t2/ckpt_best.pt"
+  },
+  {
+    "name": "t2_ae_blur",
+    "sha256": "0d2aede1d0636d4f65115b2c0d064319cc7a0fd22b55a24fdf9d1af9a750d74c",
+    "size": 15923059,
+    "source": "/kaggle/working/runs/task2_specialist_blur/20261004-1609_kaggle_t2spec_blur_final_t2/ckpt_best.pt"
+  },
+  {
+    "name": "t2_ae_occlusion",
+    "sha256": "d8e82568179939796c1461265bed6af9412f5a727f6093bcc2b9370c2b64e1b4",
+    "size": 15923059,
+    "source": "/kaggle/working/runs/task2_specialist_occlusion/20261004-1614_kaggle_t2spec_occlusion_final_t2/ckpt_best.pt"
+  },
+  {
+    "name": "t4_generator",
+    "sha256": "7855ae4ab06f668598b70e6148398beab8e9417cd1357502cb504c9edf52ebdd",
+    "size": 76799299,
+    "source": "artifacts\\promote_t4\\t4_generator.pt"
+  },
+  {
+    "name": "t4_discriminator",
+    "sha256": "9403b55a459d2dc753f82e94dbd82a744c1dad355a6dac936417e977528a1ba4",
+    "size": 11204537,
+    "source": "artifacts\\promote_t4\\t4_discriminator.pt"
+  },
+  {
+    "name": "t3_soft_moe",
+    "sha256": "767c08ba45511746cfe02ae61a28349dc249c4b173c42bdf68426075c1702a29",
+    "size": 48938975,
+    "source": "/kaggle/working/runs/task3/20261004-2005_kaggle_t3moe_final_t3/ckpt_best.pt"
+  }
+]

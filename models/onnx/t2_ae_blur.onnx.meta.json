@@ -1,0 +1,20 @@
+{
+  "name": "t2_blur",
+  "onnx_file": "t2_ae_blur.onnx",
+  "onnx_sha256": "83e24ee301489918dae3f4e11cee5a2aef48c16601c208c8415266bb1a4369a5",
+  "source_checkpoint": "/kaggle/working/runs/task2_specialist_blur/20261004-1609_kaggle_t2spec_blur_final_t2/ckpt_best.pt",
+  "checkpoint_sha256": "0d2aede1d0636d4f65115b2c0d064319cc7a0fd22b55a24fdf9d1af9a750d74c",
+  "run_id": "20261004-1609_kaggle_t2spec_blur_final_t2",
+  "global_step": 2254,
+  "smoke": false,
+  "opset": 17,
+  "model_config": {
+    "in_ch": 3,
+    "base_channels": 64,
+    "depth": 3,
+    "latent": "conv",
+    "bottleneck_dim": 2048,
+    "dropout": 0.03
+  },
+  "parameters": 1322507
+}

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import UniversalWorkspace from "./components/UniversalWorkspace.jsx";
-import { HardStub, SoftStub, SketchStub } from "./components/Stubs.jsx";
+import HardWorkspace from "./components/HardWorkspace.jsx";
+import { SoftStub, SketchStub } from "./components/Stubs.jsx";
 
-// The four workspaces. Only the first one is functional for now.
+// The four workspaces. The first two are functional; the other two are still stubs.
 const TABS = [
   { id: "universal", label: "Universal Restoration", view: <UniversalWorkspace /> },
-  { id: "hard", label: "Hard-Routed Restoration", view: <HardStub /> },
+  { id: "hard", label: "Hard-Routed Restoration", view: <HardWorkspace /> },
   { id: "soft", label: "Soft Mixture-of-Experts Restoration", view: <SoftStub /> },
   { id: "sketch", label: "Face-to-Sketch Generator", view: <SketchStub /> },
 ];

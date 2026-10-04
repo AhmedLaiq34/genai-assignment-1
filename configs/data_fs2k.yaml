@@ -1,16 +1,34 @@
 # Implements CONTRACTS §3.7 (authoritative: docs/CONTRACTS.md)
 dataset: fs2k
 raw_dir: data/raw/fs2k
+raw_subdir: FS2K   # the real download sits in data/raw/fs2k/FS2K/ (the code also accepts the folder that holds the anno files directly)
 cache_dir: data/cache/fs2k128
+cache143_dir: data/cache/fs2k143       # official training portion only, used for the random-crop augmentation
 split_file: data/splits/fs2k_split.json
+audit_grid: report/figures/task4/fs2k_pair_audit.png
+package_out: dist/cloud_data/fs2k_data.zip
 annotations: {train: anno_train.json, test: anno_test.json}
 seed: 42
 val_fraction: 0.15
 stratify_by: style
 img_size: 128
-style_ids: [0, 1, 2]   # UI Style 1/2/3 -> 0/1/2; verify annotation encoding in Phase 1
+style_ids: [0, 1, 2]   # UI Style 1/2/3 -> 0/1/2; the annotation field "style" already holds 0/1/2 (verified, see below)
 tensor:
   photo: {channels: 3, range: [-1.0, 1.0]}
   sketch: {channels: 1, range: [-1.0, 1.0]}   # grayscale
 augment_train: {resize: 143, random_crop: 128, hflip: true, identical_for_pair: true}
 test_locked: true
+
+# Facts verified on the real download (data/raw/fs2k/FS2K/), 2026-10-04:
+#   - anno_train.json / anno_test.json are JSON lists of dicts: 1058 train and 1046 test entries.
+#   - "image_name" looks like "photo1/image0110"; "style" is an int 0/1/2
+#     (train counts 357/350/351 for styles 0/1/2; test 619/381/46).
+#   - photo path  = photo/<image_name>.jpg
+#   - sketch path = sketch/sketch<N>/sketch<NNNN>.<ext>, N = digit of "photoN", NNNN = digits of "imageNNNN"
+#     (sketch2 files are .png, the others .jpg). All 2104 pairs resolve.
+# The three rules below are what genai.fs2k.pairs uses (change them here only if a different download needs it).
+pairs:
+  style_field: style
+  photo_template: "photo/{image_name}"                        # extension added from `extensions`
+  sketch_template: "sketch/sketch{folder}/sketch{number}"     # {folder}=N of photoN, {number}=NNNN of imageNNNN
+  extensions: [".jpg", ".jpeg", ".png"]

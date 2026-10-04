@@ -1,0 +1,20 @@
+{
+  "name": "t2_salt",
+  "onnx_file": "t2_ae_salt.onnx",
+  "onnx_sha256": "305f7c64d49ab84ef18c6e7e8aa4516e2159be4b6c2923b6809eb6b3ece370f9",
+  "source_checkpoint": "/kaggle/working/runs/task2_specialist_salt/20261004-1606_kaggle_t2spec_salt_final_t2/ckpt_best.pt",
+  "checkpoint_sha256": "4f8b2edb835c3b967fc8ef4ea1d43a4092841e3bfde4bd583dfb2c3a086eafee",
+  "run_id": "20261004-1606_kaggle_t2spec_salt_final_t2",
+  "global_step": 2254,
+  "smoke": false,
+  "opset": 17,
+  "model_config": {
+    "in_ch": 3,
+    "base_channels": 64,
+    "depth": 3,
+    "latent": "conv",
+    "bottleneck_dim": 2048,
+    "dropout": 0.03
+  },
+  "parameters": 1322507
+}

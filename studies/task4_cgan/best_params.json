@@ -1,0 +1,21 @@
+{
+  "study": "task4_cgan",
+  "best_trial": 25,
+  "best_val_l1": 0.0928155106318572,
+  "objective": "val L1 on [0,1] sketches",
+  "params": {
+    "lr_g": 0.00023138114869747655,
+    "lr_d": 0.000349228952295573,
+    "batch_size": 8,
+    "base_channels": 64,
+    "dropout": 0.29338252123610636,
+    "style_dim": 32,
+    "lambda_l1": 199.71014173562637
+  },
+  "n_trials": {
+    "COMPLETE": 14,
+    "PRUNED": 6,
+    "FAIL": 6
+  },
+  "source": "rebuilt from the Colab console log; original DB lost"
+}

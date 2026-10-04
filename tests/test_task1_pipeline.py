@@ -49,7 +49,8 @@ def make_cfg(data_root, tmp_path, **train):
     cfg = t1cfg.load_config(None, "local")
     cfg.update(device="test", data_root=str(data_root), output_root=str(tmp_path / "out"),
                persist_root=str(tmp_path / "out"), num_workers=0)
-    cfg["model"].update(base_channels=8, bottleneck_dim=32, dropout=0.1)
+    # the real config uses the conv latent (D40); these tiny tests pin the small dense model
+    cfg["model"].update(latent="dense", depth=4, base_channels=8, bottleneck_dim=32, dropout=0.1)
     cfg["train"].update(batch_size=8, epochs=2, sample_every_epochs=1, **train)
     cfg["run"]["smoke"] = True
     return cfg
@@ -156,16 +157,20 @@ def test_study_dry_run(data_root, tmp_path):
     for p in cfg["tuned_params"]:
         if p["name"] == "batch":
             p["choices"] = [4, 8]
+        if p["name"] == "bottleneck_dim":
+            p["choices"] = [32, 64]
+    # the real config now holds the approved budgets (D17); the TBD guard is tested on a TBD copy (D37)
+    cfg.update(n_trials="TBD_AFTER_BENCHMARK", epochs_per_trial="TBD_AFTER_BENCHMARK")
     with pytest.raises(ValueError, match="TBD"):                        # budgets stay TBD unless given
         run_study(cfg)
     cfg.update(n_trials=2, epochs_per_trial=1)
     out = run_study(cfg)
-    assert cfg["study"] == "t1_universal_dryrun" and str(tmp_path / "dry") in str(out)
+    assert cfg["study"] == "t1_universal_v2_dryrun" and str(tmp_path / "dry") in str(out)
     trials = pd.read_csv(out / "trials.csv")
     assert len(trials) == 2 and trials["state"].eq("COMPLETE").all()
     assert {"params_lr", "params_batch", "params_bottleneck_dim", "params_encoder_channels",
             "params_dropout", "params_alpha"} <= set(trials.columns)
-    db = tmp_path / "dry" / "optuna" / "t1_universal_dryrun.db"
+    db = tmp_path / "dry" / "optuna" / "t1_universal_v2_dryrun.db"
     assert db.exists()
     run_study(cfg)                                                      # continues the same study: no new trials
     study = optuna.load_study(study_name=cfg["study"], storage=f"sqlite:///{db.as_posix()}")

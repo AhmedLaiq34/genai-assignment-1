@@ -1,0 +1,14 @@
+item,value
+trials,12
+complete,9
+pruned,1
+failed,2
+pruned reasons,"{""median"": 1}"
+timeout hit (stopped before the trial budget),False
+best trial,7
+best value (fixed J on the trial validation subset),0.09692
+best params,"{""joint_lr"": 7.3e-05, ""lambda_b"": 0.013363, ""lambda_c"": 0.019847, ""recon_l1_share"": 0.403451, ""tau"": 3.644554}"
+range-edge flags (best value within 10 % of a range end),{}
+trial 0 (PDF start values) state,FAIL
+trial 0 value,
+trial 0 params,"{""joint_lr"": 5e-05, ""lambda_b"": 0.01, ""lambda_c"": 0.1, ""recon_l1_share"": 0.8, ""tau"": 1.0}"

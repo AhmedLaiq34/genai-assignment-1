@@ -1,0 +1,12 @@
+% Test set (36,690 cases): do-nothing input, Task 1 universal AE, Task 2 oracle and predicted routing (J lower is better)
+\begin{tabular}{llllllllll}
+\hline
+condition & J input & J Task 1 universal & J Task 2 oracle & J Task 2 predicted & SSIM input & SSIM Task 1 & SSIM Task 2 oracle & SSIM Task 2 predicted & images \\
+\hline
+clean & 0.0000 & 0.1046 & 0.0000 & 0.0037 & 1.0000 & 0.8252 & 1.0000 & 0.9941 & 3669 \\
+salt\_pepper & 0.3307 & 0.1107 & 0.1186 & 0.1185 & 0.3820 & 0.8140 & 0.8032 & 0.8033 & 11007 \\
+gaussian\_blur & 0.1076 & 0.1237 & 0.1273 & 0.1273 & 0.8136 & 0.7880 & 0.7868 & 0.7869 & 11007 \\
+occlusion & 0.1944 & 0.1742 & 0.1799 & 0.1783 & 0.7077 & 0.7067 & 0.6990 & 0.7016 & 11007 \\
+overall & 0.1898 & 0.1330 & 0.1277 & 0.1276 & 0.6710 & 0.7751 & 0.7867 & 0.7869 & 36690 \\
+\hline
+\end{tabular}

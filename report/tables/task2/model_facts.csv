@@ -1,0 +1,7 @@
+model,parameters
+classifier,98196
+salt,1322507
+blur,1322507
+occlusion,1322507
+specialist architecture,"{""in_ch"": 3, ""base_channels"": 64, ""depth"": 3, ""bottleneck_dim"": 2048, ""dropout"": 0.03, ""img_size"": 128, ""latent"": ""conv""}"
+classifier architecture,"{""channels"": [16, 32, 64, 128], ""dropout"": 0.39996509593831964, ""num_classes"": 4}"

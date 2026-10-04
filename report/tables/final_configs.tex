@@ -1,0 +1,10 @@
+% Hyperparameters of the final models (best Optuna trial plus fixed settings)
+\begin{tabular}{lllllllllll}
+\hline
+model & architecture arguments & lr & batch & alpha (L1 weight) & weight decay & epochs & schedule & optimiser & mixed precision & seed \\
+\hline
+Task 1 universal AE & {"in\_ch": 3, "base\_channels": 64, "depth": 3, "latent": "conv", "bottleneck\_dim": 2048, "dropout": 0.14768499158692194} & 0.002304 & 32 & 0.5022 & 0.0001 & 100 & cosine & AdamW & no & 42 \\
+Task 2 classifier & {"channels": [16, 32, 64, 128], "dropout": 0.39996509593831964, "num\_classes": 4} & 0.002175 & 32 & - & 8.918e-05 & 30 & cosine & AdamW & yes & 42 \\
+Task 2 specialists (salt, blur, occlusion) & {"in\_ch": 3, "base\_channels": 64, "depth": 3, "latent": "conv", "bottleneck\_dim": 2048, "dropout": 0.03} & 0.0003751 & 64 & 0.5894 & 0.0001 & 50 & cosine & AdamW & yes & 42 \\
+\hline
+\end{tabular}

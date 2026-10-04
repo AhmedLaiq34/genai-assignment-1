@@ -1,0 +1,13 @@
+# Extra packages for the Kaggle notebook (torch, torchvision and numpy are already installed there).
+# The notebook runs:  pip install -e . -r requirements_kaggle.txt
+optuna>=3.6
+wandb>=0.17
+pytorch-msssim>=1.0
+scikit-learn>=1.4
+matplotlib>=3.8
+pandas>=2.1
+onnx>=1.16
+onnxruntime>=1.18
+pillow>=10
+pyyaml>=6
+tqdm>=4.66

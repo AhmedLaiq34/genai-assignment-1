@@ -1,0 +1,5 @@
+cond,severity,n,corr_J_texture,corr_J_dark_frac,J_texture_q1_lowest,J_texture_q4_highest,J_dark_images,J_other_images,n_dark_images
+clean,none,3669,0.7437,-0.0148,0.0662,0.1531,0.1134,0.1043,103
+gaussian_blur,high,3669,0.8031,-0.0682,0.098,0.2214,0.1436,0.1544,103
+occlusion,medium,3669,0.7677,0.0465,0.1244,0.2197,0.187,0.1676,103
+occlusion,high,3669,0.7799,0.0862,0.1709,0.2709,0.2435,0.2172,103

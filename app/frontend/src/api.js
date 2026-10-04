@@ -29,8 +29,9 @@ export async function listSamples() {
   });
 }
 
-// POST /api/universal. Input = {file | sampleId, corruption, severity, params, seed}
-export async function runUniversal({ file, sampleId, corruption, severity, params, seed }) {
+// The multipart form sent to /api/universal and /api/hard (same fields for both).
+// Input = {file | sampleId, corruption, severity, params, seed}
+function buildForm({ file, sampleId, corruption, severity, params, seed }) {
   const fd = new FormData();
   if (file) fd.append("file", file);
   else fd.append("sample_id", sampleId);
@@ -40,6 +41,18 @@ export async function runUniversal({ file, sampleId, corruption, severity, param
     else fd.append("severity", severity);
   }
   fd.append("seed", String(seed));
-  const res = await check(await fetch(`${BASE}/universal`, { method: "POST", body: fd }));
+  return fd;
+}
+
+// POST /api/universal -> {input_png_b64, output_png_b64, corruption_applied, params, timing_ms:{preprocess,inference,total}}
+export async function runUniversal(input) {
+  const res = await check(await fetch(`${BASE}/universal`, { method: "POST", body: buildForm(input) }));
+  return res.json();
+}
+
+// POST /api/hard -> the universal fields (timing_ms has preprocess, classifier, expert, total) plus
+// {probs[4], predicted, predicted_id, expert, identity_bypass}
+export async function runHard(input) {
+  const res = await check(await fetch(`${BASE}/hard`, { method: "POST", body: buildForm(input) }));
   return res.json();
 }

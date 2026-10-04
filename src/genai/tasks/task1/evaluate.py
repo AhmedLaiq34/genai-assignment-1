@@ -43,11 +43,15 @@ def _per_image_metrics(model, ds, device, batch_size: int = 128) -> pd.DataFrame
         out = model(corrupted.to(device)).cpu()
         mae, s, p = l1(out, clean), ssim(out, clean), psnr(out, clean)
         j = objective_J(mae, s)
+        # baseline "do nothing": how far the corrupted INPUT already is from the clean target
+        s_in = ssim(corrupted, clean)
+        j_in = objective_J(l1(corrupted, clean), s_in)
         for k in range(len(mae)):
             r = ds.rows[i]
             rows.append({"row": i, "image_id": r["image_id"], "cond": r["cond_name"],
                          "severity": r["severity"] or "none", "MAE": mae[k].item(),
-                         "SSIM": s[k].item(), "PSNR": p[k].item(), "J": j[k].item()})
+                         "SSIM": s[k].item(), "PSNR": p[k].item(), "J": j[k].item(),
+                         "SSIM_input": s_in[k].item(), "J_input": j_in[k].item()})
             i += 1
     return pd.DataFrame(rows)
 
@@ -104,7 +108,7 @@ def run_evaluation(cfg: dict, checkpoint: str, final_test: bool = False) -> Path
     df.drop(columns=["row"]).to_csv(out_dir / "per_image.csv", index=False)
 
     # condition x severity table (+ per-condition and overall rows)
-    metrics = ["MAE", "SSIM", "PSNR", "J"]
+    metrics = ["MAE", "SSIM", "PSNR", "J", "SSIM_input", "J_input"]   # *_input = baseline: the corrupted input itself
     table = df.groupby(["cond", "severity"])[metrics].mean().assign(count=df.groupby(["cond", "severity"]).size())
     per_cond = df.groupby("cond")[metrics].mean().assign(count=df.groupby("cond").size())
     per_cond.index = pd.MultiIndex.from_product([per_cond.index, ["all"]])

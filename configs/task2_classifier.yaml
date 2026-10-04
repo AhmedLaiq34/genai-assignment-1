@@ -1,14 +1,75 @@
-# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
+# Task 2 corruption classifier (clean / salt_pepper / gaussian_blur / occlusion). Implements CONTRACTS 3.5, 3.6, 3.8, 3.13.
+# Device keys (device, data_root, output_root, persist_root, num_workers) are merged in from
+# configs/devices/<profile>.yaml by scripts/*.py and by genai.tasks.task1.config.load_config.
+#
+# Budgets (n_trials, epochs_per_trial, train.epochs): decisions D44 and D47 (from the local benchmark and 20-epoch test run;
+# Kaggle T4 run via tools/t2_pipeline.py). Everything marked PROVISIONAL is a starting point for
+# smoke runs, not a result.
+
+task: t2cls
+component: classifier          # KEEP: genai.tasks.task2.{train,tune,evaluate} dispatch on this
+seed: 42
+data_config: configs/data_pets.yaml     # file names of split / manifests (see data_pets.yaml)
+
+run:
+  desc: t2cls           # short description used in run_id = <YYYYmmdd-HHMM>_<device>_<desc>
+  smoke: false          # true -> run_id gets the suffix _smoke and the run must never be promoted
+  project: genai-a1     # tracker project (group = task2)
+
+# KEEP: used by `python scripts/evaluate.py --task t2cls` when no --ckpt is given. The full hard-routed
+# evaluation needs all four checkpoints (paths to ckpt_best.pt / promoted .pt files); set them here or
+# with  --set eval.checkpoints.classifier=<path> --set eval.checkpoints.salt=<path> ...
+eval:
+  checkpoints: {classifier: null, salt: null, blur: null, occlusion: null}
+
+# ---- model: constructor arguments of CorruptionClassifier (PROVISIONAL defaults; the Optuna study picks the final ones)
+model:
+  channels: [16, 32, 64, 128]   # PROVISIONAL: one stride-2 conv block per entry (128 -> 8 spatial for 4 blocks)
+  dropout: 0.2                  # PROVISIONAL: before the final linear layer
+  num_classes: 4                # clean, salt_pepper, gaussian_blur, occlusion (fixed by the assignment)
+
+# ---- training (final training uses the study's best values; these are PROVISIONAL)
+train:
+  lr: 1.0e-3            # PROVISIONAL
+  batch_size: 64        # PROVISIONAL; MUST be a multiple of 4: every batch holds batch_size/4 images per class
+  weight_decay: 1.0e-4  # PROVISIONAL (AdamW weight decay; tuned by the study)
+  epochs: 30            # budget D47 (was 50): final training (macro-F1 reached 0.98 by epoch 15-20 in a 20-epoch test run)
+  max_steps: null       # optional hard cap on optimiser steps (smoke runs / dry runs)
+  pause_after_steps: null   # stop early WITHOUT changing the schedule (tests of resume)
+  train_subset: null    # use only the first N train images (smoke runs / dry runs)
+  val_subset: null      # KEEP (scripts/tune.py --dry-run reads it): use only the first N val manifest rows (multiple of 4)
+  amp: true             # D44: mixed precision on the GPU (ignored on CPU); the T4 has fp16 tensor cores
+  scheduler: cosine     # cosine | none
+  grad_clip: null
+  log_every_steps: 50
+  sample_every_epochs: 1    # how often the small confusion-matrix PNG is written to samples/
+  checkpoint_every_minutes: 10
+  val_batch_size: 128
+  val_workers: 0        # val data is loaded in the main process (each worker costs ~0.5 GB RAM on Windows)
+
+# ---- Optuna study (CONTRACTS 3.13)
 study: t2_classifier
 objective: "macro-F1 on val manifest (maximise)"
-n_trials: TBD_AFTER_BENCHMARK
-epochs: TBD_AFTER_BENCHMARK
-sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
-pruner: Median
+n_trials: 12          # budget D47 (was 40); the report states the completed-trial count
+epochs_per_trial: 8    # budget D47 (was 12); trials use reduced epochs (declared in the report); pruning only at epochs 5 to 8
+trial_train_subset: null                # KEEP (scripts/tune.py --dry-run reads it): optional training subset for trials; null = all
+sampler: {name: TPE, seed: 42}
+# D42: warm-up chosen from a real 20-epoch learning curve (default config, whole train set): val macro-F1 was
+# 0.69 / 0.85 / 0.93 at epochs 1 / 2 / 3, a noisy dip at epochs 4 (0.80) and 10 (0.92), >= 0.958 from epoch 5 and
+# 0.984 at epoch 20. There is no chance-level plateau (chance would be 0.25), but the first epochs are still
+# rising and noisy, so no pruning before epoch 5 (it only matters when epochs_per_trial > 5).
+pruner: {name: Median, n_startup_trials: 5, n_warmup_steps: 5}   # D47: 5 startup trials (was 8) because the study has only 12 trials
 storage: artifacts/optuna/t2_classifier.db   # promoted to studies/t2_classifier.db when complete
+study_dir: studies/t2_classifier             # KEEP: trials.csv + plots
+
+# PROVISIONAL search space (REC, CONTRACTS 3.13: "ranges are refined after benchmarking").
+# `name` -> where it goes in the config is defined in genai/tasks/task2/classifier.py (PARAM_TARGETS).
+# conv_channels choices are names from CHANNEL_CHOICES in that file ("16-32-64" -> [16, 32, 64]).
+# Every batch choice must be a multiple of 4 (balanced batches); the study refuses anything else.
+search_space_status: PROVISIONAL
 tuned_params:
-  - {name: lr, range: TBD_AFTER_BENCHMARK}
-  - {name: batch, range: TBD_AFTER_BENCHMARK}
-  - {name: conv_channels, range: TBD_AFTER_BENCHMARK}
-  - {name: dropout, range: TBD_AFTER_BENCHMARK}
-  - {name: weight_decay, range: TBD_AFTER_BENCHMARK}
+  - {name: lr,            type: float,       low: 1.0e-4, high: 3.0e-3, log: true}
+  - {name: batch,         type: categorical, choices: [32, 64, 128]}
+  - {name: conv_channels, type: categorical, choices: ["16-32-64", "32-64-128", "16-32-64-128", "32-64-128-256"]}
+  - {name: dropout,       type: float,       low: 0.0,    high: 0.5,    log: false}
+  - {name: weight_decay,  type: float,       low: 1.0e-6, high: 1.0e-2, log: true}

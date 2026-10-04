@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "checks": [
+    "Initial empty state; Run disabled until a source is selected.",
+    "Universal Restoration: sample, loading, successful image/routing response, PNG download, HTTP 501, retry, desktop and mobile.",
+    "Hard-Routed Restoration: sample, loading, successful image/routing response, PNG download, HTTP 503, retry, desktop and mobile.",
+    "Soft Mixture-of-Experts Restoration: sample, loading, successful image/routing response, PNG download, HTTP 501, retry, desktop and mobile.",
+    "Hard routing clean input selects Identity bypass.",
+    "Client rejects incorrect MIME/oversized files; corrupt PNG server error; upload sends none; custom kernel/sigma and valid severity verified in multipart.",
+    "Sketch: default 501, all three style success paths, download, permission denial, synthetic webcam capture and track cleanup, desktop/mobile. Real camera not tested.",
+    "System health: online, offline, recovery, per-model loaded/missing, last inference."
+  ],
+  "pageErrors": []
+}

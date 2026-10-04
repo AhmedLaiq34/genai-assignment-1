@@ -1,14 +1,99 @@
-# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
+# Task 2 specialist autoencoders (one UniversalAE per corruption: salt, blur, occlusion).
+# Same layout as task1_universal.yaml. Device keys (device, data_root, output_root, persist_root,
+# num_workers) are merged in from configs/devices/<profile>.yaml by scripts/*.py and load_config.
+# Keep the keys marked KEEP, other code reads them.
+#
+# Budgets (n_trials, epochs_per_trial, train.epochs): decisions D44 and D47 (local benchmark + 30-epoch checks; run on
+# a Kaggle T4 with tools/t2_pipeline.py). Everything marked PROVISIONAL is a starting point, not a result.
+#
+# How the pieces fit together
+#   1. shared study : python scripts/tune.py --task t2spec        (ONE search; each trial trains
+#                     all three specialists with the same sampled values = 3 trainings per trial)
+#   2. final config : python -m genai.tasks.task2.specialist write-final-config \
+#                         --study-db artifacts/optuna/t2_specialist_shared.db
+#                     -> configs/task2_specialist_final.yaml (best values, train.epochs still TBD)
+#   3. three finals : python scripts/train.py --task t2spec --config configs/task2_specialist_final.yaml \
+#                         --set specialist.corruption=salt        (then blur, then occlusion)
+task: t2spec
+component: specialist          # KEEP: genai.tasks.task2.{train,tune,evaluate} dispatch on this
+seed: 42
+data_config: configs/data_pets.yaml
+
+run:
+  desc: t2spec                 # run_id uses t2spec_<corruption>
+  smoke: false                 # true -> run_id gets the suffix _smoke and the run must never be promoted
+  project: genai-a1            # tracker group is "task2"
+
+# KEEP. The corruption of the specialist being trained: salt | blur | occlusion.
+# It is required by run_training and is chosen on the command line / in the notebook OVERRIDES:
+#   --set specialist.corruption=salt
+# (the shared study trains all three and ignores it). train_specialist writes the matching class id
+# (salt 1, blur 2, occlusion 3) into `specialist.cond_id` of the config saved with every checkpoint.
+specialist:
+  corruption: null
+
+# KEEP: see task2_classifier.yaml. The oracle / predicted evaluation needs all four checkpoints.
+eval:
+  checkpoints: {classifier: null, salt: null, blur: null, occlusion: null}
+
+# ---- model: constructor arguments of UniversalAE (same class as Task 1, separate parameters per specialist)
+# D42: the conv latent (a latent GRID, no flatten + dense layer), as in Task 1 v2 (D40). The dense vector latent
+# learned only an 8x8 thumbnail (docs/LESSONS_FROM_TASK1.md section 3). Latent values = latent channels * 16 * 16.
+model:
+  in_ch: 3
+  base_channels: 64     # PROVISIONAL (tuned by the study: "channels")
+  depth: 3              # 128 -> 16 spatial (fixed architecture choice, not tuned)
+  latent: conv          # 1x1-conv latent grid; "dense" would be the old flatten + Linear vector
+  bottleneck_dim: 4096  # PROVISIONAL (tuned by the study: "bottleneck"); TOTAL latent values, a multiple of 256
+  dropout: 0.03         # PROVISIONAL, kept FIXED: the PDF list for the specialists does not include dropout
+
+# ---- training of ONE specialist (the final runs use the study's best values; these are PROVISIONAL)
+train:
+  lr: 1.7e-4            # PROVISIONAL (tuned); value of the Task 1 conv prototype
+  batch_size: 32        # PROVISIONAL (tuned)
+  alpha: 0.86           # L1 weight of alpha*L1 + (1-alpha)*(1-SSIM); PROVISIONAL (Task 1 conv prototype; PDF start is 0.8), tuned as "l1_ssim_weight"
+  weight_decay: 1.0e-4  # PROVISIONAL (not tuned)
+  epochs: 50            # budget D47 (was 100): each final specialist training
+  max_steps: null       # optional hard cap on optimiser steps (smoke runs / dry runs)
+  pause_after_steps: null   # stop early WITHOUT changing the schedule (tests of resume)
+  train_subset: null    # use only the first N train images (smoke runs / dry runs)
+  val_subset: null      # KEEP (scripts/tune.py --dry-run reads it). Use only the first N val rows OF THIS
+                        # specialist's corruption (the rows are filtered first, then cut)
+  amp: true             # D44: mixed precision on the GPU (ignored on CPU); 1.45x faster per step locally
+  scheduler: cosine     # cosine | none
+  grad_clip: null
+  log_every_steps: 50
+  sample_every_epochs: 1
+  checkpoint_every_minutes: 10
+  val_batch_size: 128
+  val_workers: 0        # val data is loaded in the main process (each worker costs ~0.5 GB RAM on Windows)
+
+# ---- shared Optuna study (CONTRACTS 3.13; PDF page 5 allows one shared search)
 study: t2_specialist_shared
-objective: "mean J over 3 corruptions (minimise)"
-n_trials: TBD_AFTER_BENCHMARK
-epochs: TBD_AFTER_BENCHMARK
-sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
-pruner: Median
+objective: "mean over salt/blur/occlusion of the best val J = 0.5*L1 + 0.5*(1-SSIM) (minimise)"
+n_trials: 10                         # budget D47 (was 40); one trial = THREE short trainings; the report states the completed-trial count
+epochs_per_trial: 8                  # budget D47 (was 15); epochs of EACH of the three trainings in a trial
+trial_train_subset: null             # KEEP: optional train subset for trials; null = all (dry-run sets it)
+trial_val_subset: null               # optional number of val rows PER corruption in trials; null = use train.val_subset
+trial_keep_checkpoints: false        # false: delete the .pt files of a trial after it (the trial only needs its J);
+                                     # metrics.jsonl and config.yaml of every trial run are kept
+sampler: {name: TPE, seed: 42}
+# D42: a trial reports its running mean J after each finished corruption, so the pruner steps are 1/2/3 =
+# salt / salt+blur / salt+blur+occlusion (not epochs). Real conv-latent learning curves (30 epochs, batch 32) fall
+# smoothly from epoch 1 (J 0.267 -> 0.151 for salt) without the plateau of the dense model, so the Task 1 epoch
+# warm-up of 8 does not apply. But step 1 is the salt training alone, so no pruning on one corruption:
+# the first possible prune is after step 2.
+pruner: {name: Median, n_startup_trials: 5, n_warmup_steps: 2}   # D47: 5 startup trials (was 8) because the study has only 10 trials
 storage: artifacts/optuna/t2_specialist_shared.db   # promoted to studies/t2_specialist_shared.db when complete
+study_dir: studies/t2_specialist_shared             # trials.csv + plots
+initial_values: {l1_ssim_weight: 0.8}   # PDF-given starting point, to be investigated not accepted
+
+# PROVISIONAL search space (REC, CONTRACTS 3.13: "ranges are refined after benchmarking").
+# `name` -> where it goes in the config is defined in genai/tasks/task2/specialist.py (PARAM_TARGETS).
+search_space_status: PROVISIONAL
 tuned_params:
-  - {name: lr, range: TBD_AFTER_BENCHMARK}
-  - {name: bottleneck, range: TBD_AFTER_BENCHMARK}
-  - {name: channels, range: TBD_AFTER_BENCHMARK}
-  - {name: batch, range: TBD_AFTER_BENCHMARK}
-  - {name: l1_ssim_weight, range: TBD_AFTER_BENCHMARK}
+  - {name: lr,              type: float,       low: 1.0e-4, high: 3.0e-3, log: true}
+  - {name: bottleneck,      type: categorical, choices: [1024, 2048, 4096]}   # TOTAL latent values, multiples of 256 (conv latent, depth 3); add 8192 if the blur check asks for it
+  - {name: channels,        type: categorical, choices: [16, 32, 48, 64]}    # base_channels
+  - {name: batch,           type: categorical, choices: [32, 64, 128]}
+  - {name: l1_ssim_weight,  type: float,       low: 0.5,    high: 0.95, log: false}   # alpha

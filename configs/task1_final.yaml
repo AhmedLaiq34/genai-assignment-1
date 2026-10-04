@@ -1,0 +1,88 @@
+# Task 1 FINAL training config, written by tools/t1_overnight.py on 2026-10-04 04:53:51.
+# Best trial of study 't1_universal': trial 39, val J 0.33001.
+# Parameters copied from that trial: {"lr": 0.0001682187199408275, "batch": 32, "bottleneck_dim": 512, "encoder_channels": 64, "dropout": 0.02882318726173673, "alpha": 0.8618349704704766}
+# Schedule: 100 epochs (approved budget D17). Selection by best val J.
+task: t1
+seed: 42
+data_config: configs/data_pets.yaml
+run:
+  desc: t1_final
+  smoke: false
+  project: genai-a1
+model:
+  in_ch: 3
+  base_channels: 64
+  depth: 4
+  bottleneck_dim: 512
+  dropout: 0.02882318726173673
+train:
+  lr: 0.0001682187199408275
+  batch_size: 32
+  alpha: 0.8618349704704766
+  weight_decay: 0.0001
+  epochs: 100
+  max_steps: null
+  pause_after_steps: null
+  train_subset: null
+  val_subset: null
+  amp: false
+  scheduler: cosine
+  grad_clip: null
+  log_every_steps: 50
+  sample_every_epochs: 5
+  checkpoint_every_minutes: 10
+  val_batch_size: 128
+  val_workers: 0
+study: t1_universal
+objective: J = 0.5*L1 + 0.5*(1-SSIM) (minimise)
+n_trials: 40
+epochs_per_trial: 15
+trial_train_subset: null
+sampler:
+  name: TPE
+  seed: 42
+pruner:
+  name: Median
+  n_startup_trials: 8
+  n_warmup_steps: 8
+storage: artifacts/optuna/t1_universal.db
+study_dir: studies/t1_universal
+initial_values:
+  alpha: 0.8
+search_space_status: USED BY STUDY t1_universal (this file holds its best trial)
+tuned_params:
+- name: lr
+  type: float
+  low: 0.0001
+  high: 0.003
+  log: true
+- name: batch
+  type: categorical
+  choices:
+  - 32
+  - 64
+  - 128
+- name: bottleneck_dim
+  type: categorical
+  choices:
+  - 64
+  - 128
+  - 256
+  - 512
+- name: encoder_channels
+  type: categorical
+  choices:
+  - 16
+  - 32
+  - 48
+  - 64
+- name: dropout
+  type: float
+  low: 0.0
+  high: 0.3
+  log: false
+- name: alpha
+  type: float
+  low: 0.5
+  high: 0.95
+  log: false

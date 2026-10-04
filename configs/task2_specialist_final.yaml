@@ -1,0 +1,104 @@
+# Task 2 FINAL specialist config, written by tools/t2_pipeline.py on 2026-10-04 16:05:33.
+# Best trial of study 't2_specialist_shared': trial 5, value 0.16739.
+# Parameters copied from that trial: {"lr": 0.00037507963596256056, "bottleneck": 2048, "channels": 64, "batch": 64, "l1_ssim_weight": 0.5894220566903776}
+# Schedule: 50 epochs (budget D47).
+task: t2spec
+component: specialist
+seed: 42
+data_config: configs/data_pets.yaml
+run:
+  desc: t2spec_final
+  smoke: false
+  project: genai-a1
+specialist:
+  corruption: null
+eval:
+  checkpoints:
+    classifier: null
+    salt: null
+    blur: null
+    occlusion: null
+model:
+  in_ch: 3
+  base_channels: 64
+  depth: 3
+  latent: conv
+  bottleneck_dim: 2048
+  dropout: 0.03
+train:
+  lr: 0.00037507963596256056
+  batch_size: 64
+  alpha: 0.5894220566903776
+  weight_decay: 0.0001
+  epochs: 50
+  max_steps: null
+  pause_after_steps: null
+  train_subset: null
+  val_subset: null
+  amp: true
+  scheduler: cosine
+  grad_clip: null
+  log_every_steps: 50
+  sample_every_epochs: 5
+  checkpoint_every_minutes: 10
+  val_batch_size: 128
+  val_workers: 0
+study: t2_specialist_shared
+objective: mean over salt/blur/occlusion of the best val J = 0.5*L1 + 0.5*(1-SSIM)
+  (minimise)
+n_trials: 10
+epochs_per_trial: 8
+trial_train_subset: null
+trial_val_subset: null
+trial_keep_checkpoints: false
+sampler:
+  name: TPE
+  seed: 42
+pruner:
+  name: Median
+  n_startup_trials: 5
+  n_warmup_steps: 2
+storage: artifacts/optuna/t2_specialist_shared.db
+study_dir: studies/t2_specialist_shared
+initial_values:
+  l1_ssim_weight: 0.8
+search_space_status: USED BY STUDY t2_specialist_shared (this file holds its best
+  trial)
+tuned_params:
+- name: lr
+  type: float
+  low: 0.0001
+  high: 0.003
+  log: true
+- name: bottleneck
+  type: categorical
+  choices:
+  - 1024
+  - 2048
+  - 4096
+- name: channels
+  type: categorical
+  choices:
+  - 16
+  - 32
+  - 48
+  - 64
+- name: batch
+  type: categorical
+  choices:
+  - 32
+  - 64
+  - 128
+- name: l1_ssim_weight
+  type: float
+  low: 0.5
+  high: 0.95
+  log: false
+final_config_source:
+  study: t2_specialist_shared
+  best_trial: 5
+  best_value: 0.16738681285810805
+  J_per_corruption:
+    salt: 0.1635369736417804
+    blur: 0.13216403375238017
+    occlusion: 0.20645943118016358

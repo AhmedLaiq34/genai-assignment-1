@@ -1,0 +1,7 @@
+part,images,manifest rows,sha256
+official trainval,3680,-,-
+"train (80%, seed 42)",2944,-,ec3073e64d5245f529d2b2f98690cbad3dc9bc1f16b509d7a14914ff3c226dbd
+"validation (20%, seed 42)",736,2944,a31034396f5bca02fdfa31e1b7d1836f0e4ed4ff746072fb6623af630feb3bb4
+official test (locked until the final evaluation),3669,36690,c76ef1c22605da4bdebfb7fc8deafbc72fe1a9c154c55757c26dbdf8140afbb3
+validation manifest file,-,4 rows per image (clean + 3 corruptions),f05f15d5e9949f736fe7045f4b5e62d5ec2ce09db70db415bcdd5a6baced5a9e
+test manifest file,-,10 rows per image (clean + 3 types x 3 severities),bd9640415ee4f81d361b8e96fc68a79536a42770a69203b2f55b7b7bbfaf97e5

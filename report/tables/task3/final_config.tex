@@ -1,0 +1,20 @@
+% Final Task 3 configuration (best study trial) next to trial 0 (the PDF start values)
+\begin{tabular}{lll}
+\hline
+parameter & final model & trial 0 (PDF start) \\
+\hline
+tau & 3.6446 & 1.0000 \\
+joint\_lr & 0.0001 & 0.0001 \\
+lambda\_1 & 0.4035 & 0.8000 \\
+lambda\_s & 0.5965 & 0.2000 \\
+lambda\_c & 0.0198 & 0.1000 \\
+lambda\_b & 0.0134 & 0.0100 \\
+warm-up epochs & 1 &  \\
+joint epochs & 8 &  \\
+warm-up lr & 0.0002 &  \\
+batch size & 64 &  \\
+weight decay & 0.0001 &  \\
+collapse thresholds & {"min\_mean\_weight": 0.02, "max\_foreign\_weight": 0.9} &  \\
+final\_config\_source & {"study": "t3\_moe", "best\_trial": 7, "best\_value": 0.09692070159539783, "best\_params": {"joint\_lr": 7.328097194130305e-05, "tau": 3.644553588637853, "lambda\_c": 0.01984705741660534, "lambda\_b": 0.013362875320023589, "recon\_l1\_share": 0.403450921478546}, "best\_val\_J\_per\_epoch": [0.09816077750102799, 0.09743136916222284, 0.09692070159539783], "best\_mean\_w\_by\_class": [[0.8049144744873047, 0.034583646804094315, 0.0552351251244545, 0.10526671260595322], [0.01558193564414978, 0.9642963409423828, 0.0036846131552010775, 0.016437094658613205], [0.2795245051383972, 0.008818943053483963, 0.6724178194999695, 0.03923872858285904], [0.14317995309829712, 0.03192116692662239, 0.02104008197784424, 0.8038588762283325]], "trial\_0": {"state": "FAIL", "value": null, "params": {"joint\_lr": 5e-05, "tau": 1.0, "lambda\_c": 0.1, "lambda\_b": 0.01, "recon\_l1\_share": 0.8}}} &  \\
+\hline
+\end{tabular}

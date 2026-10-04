@@ -1,0 +1,14 @@
+condition,split / level,definition,parameters,when sampled
+clean,training,no corruption,-,-
+salt_pepper,training,"corruption probability p ~ U(0.02, 0.15); pixels replaced by black or white with equal probability (per pixel, all 3 channels together)","p in (0.02, 0.15)",new draw at every image load
+gaussian_blur,training,"kernel size from {3, 5, 7} (uniform), sigma ~ U(0.5, 2.5), reflect padding","kernel in (3, 5, 7), sigma in (0.5, 2.5)",new draw at every image load
+occlusion,training,"1 to 3 black rectangles; union coverage ~ U(0.10, 0.35); random positions; rejection sampling until the union is in range","n in (1, 2, 3), coverage in (0.1, 0.35)",new draw at every image load
+salt_pepper,fixed low,p = 0.03,p = 0.03,validation/test manifest
+gaussian_blur,fixed low,"kernel 3, sigma 0.7","(3, 0.7)",validation/test manifest
+occlusion,fixed low,"1 non-overlapping rectangle(s), union about 10% (+/- 1 pp)","n = 1, coverage = 0.1",validation/test manifest
+salt_pepper,fixed medium,p = 0.08,p = 0.08,validation/test manifest
+gaussian_blur,fixed medium,"kernel 5, sigma 1.5","(5, 1.5)",validation/test manifest
+occlusion,fixed medium,"2 non-overlapping rectangle(s), union about 20% (+/- 1 pp)","n = 2, coverage = 0.2",validation/test manifest
+salt_pepper,fixed high,p = 0.15,p = 0.15,validation/test manifest
+gaussian_blur,fixed high,"kernel 7, sigma 2.5","(7, 2.5)",validation/test manifest
+occlusion,fixed high,"3 non-overlapping rectangle(s), union about 35% (+/- 1 pp)","n = 3, coverage = 0.35",validation/test manifest

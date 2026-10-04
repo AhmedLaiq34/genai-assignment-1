@@ -1,0 +1,90 @@
+{
+  "name": "t3_soft_moe",
+  "onnx_file": "t3_soft_moe.onnx",
+  "onnx_sha256": "3be01e2053bd92db77a89447808459f9b230fc92f9800c56f862d1501dbd46b9",
+  "source_checkpoint": "/kaggle/working/runs/task3/20261004-2005_kaggle_t3moe_final_t3/ckpt_best.pt",
+  "checkpoint_sha256": "767c08ba45511746cfe02ae61a28349dc249c4b173c42bdf68426075c1702a29",
+  "run_id": "20261004-2005_kaggle_t3moe_final_t3",
+  "global_step": 276,
+  "smoke": false,
+  "opset": 17,
+  "inputs": [
+    "input"
+  ],
+  "outputs": [
+    "output",
+    "weights"
+  ],
+  "tau": 3.644553588637853,
+  "model_config": {
+    "gate": {
+      "channels": [
+        16,
+        32,
+        64,
+        128
+      ],
+      "dropout": 0.39996509593831964,
+      "num_classes": 4
+    },
+    "experts": {
+      "salt": {
+        "in_ch": 3,
+        "base_channels": 64,
+        "depth": 3,
+        "bottleneck_dim": 2048,
+        "dropout": 0.03,
+        "img_size": 128,
+        "latent": "conv"
+      },
+      "blur": {
+        "in_ch": 3,
+        "base_channels": 64,
+        "depth": 3,
+        "bottleneck_dim": 2048,
+        "dropout": 0.03,
+        "img_size": 128,
+        "latent": "conv"
+      },
+      "occlusion": {
+        "in_ch": 3,
+        "base_channels": 64,
+        "depth": 3,
+        "bottleneck_dim": 2048,
+        "dropout": 0.03,
+        "img_size": 128,
+        "latent": "conv"
+      }
+    },
+    "tau": 3.644553588637853,
+    "branches": [
+      "identity",
+      "salt",
+      "blur",
+      "occlusion"
+    ]
+  },
+  "source_checkpoints": {
+    "classifier": {
+      "file": "t2_classifier.pt",
+      "sha256": "7d4a9a1f8a073e64e8cc21deec4db98d51ad48dc04eb9b5b4215f49102ece028"
+    },
+    "salt": {
+      "file": "t2_ae_salt.pt",
+      "sha256": "4f8b2edb835c3b967fc8ef4ea1d43a4092841e3bfde4bd583dfb2c3a086eafee"
+    },
+    "blur": {
+      "file": "t2_ae_blur.pt",
+      "sha256": "0d2aede1d0636d4f65115b2c0d064319cc7a0fd22b55a24fdf9d1af9a750d74c"
+    },
+    "occlusion": {
+      "file": "t2_ae_occlusion.pt",
+      "sha256": "d8e82568179939796c1461265bed6af9412f5a727f6093bcc2b9370c2b64e1b4"
+    },
+    "t1": {
+      "file": "t1_universal_ae.pt",
+      "sha256": "5052e4ffef7716e87bb9a2697b1ec66cdf2695111bd33cccc9342427ab591aa9"
+    }
+  },
+  "parameters": 4065717
+}

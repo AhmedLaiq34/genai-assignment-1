@@ -1,0 +1,4 @@
+model,architecture arguments,lr,batch,alpha (L1 weight),weight decay,epochs,schedule,optimiser,mixed precision,seed
+Task 1 universal AE,"{""in_ch"": 3, ""base_channels"": 64, ""depth"": 3, ""latent"": ""conv"", ""bottleneck_dim"": 2048, ""dropout"": 0.14768499158692194}",0.002303889988826024,32,0.5022018464807292,0.0001,100,cosine,AdamW,no,42
+Task 2 classifier,"{""channels"": [16, 32, 64, 128], ""dropout"": 0.39996509593831964, ""num_classes"": 4}",0.0021750300246031274,32,-,8.918064582360691e-05,30,cosine,AdamW,yes,42
+"Task 2 specialists (salt, blur, occlusion)","{""in_ch"": 3, ""base_channels"": 64, ""depth"": 3, ""latent"": ""conv"", ""bottleneck_dim"": 2048, ""dropout"": 0.03}",0.00037507963596256056,64,0.5894220566903776,0.0001,50,cosine,AdamW,yes,42

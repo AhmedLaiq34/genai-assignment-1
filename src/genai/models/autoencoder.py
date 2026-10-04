@@ -16,6 +16,15 @@ Data flow (example: base_channels=32, depth=4, bottleneck_dim=256, 128x128 input
 There are NO skip connections: everything the decoder knows about the image has to pass
 through the `bottleneck_dim` numbers in z. All architecture choices are constructor
 arguments, so the same class serves Task 1 and the three Task 2 specialists.
+
+Two kinds of latent (constructor argument `latent`)
+    "dense" (default): flatten + Linear -> a vector z of bottleneck_dim numbers (the design above).
+    "conv":            a 1x1 convolution squeezes the encoder's last feature map to
+                       latent_channels x s x s, where s = img_size / 2**depth. The latent is a small
+                       grid, and bottleneck_dim = latent_channels * s * s is its TOTAL number of values.
+                       Example (depth 3, bottleneck_dim 4096): 256x16x16 -> 16x16x16 -> 256x16x16 -> decoder.
+                       There is no dense layer: this keeps the position of every feature, which a flattened
+                       dense layer has to relearn from only a few thousand images (decision D40).
 """
 from __future__ import annotations
 
@@ -51,20 +60,26 @@ class UniversalAE(nn.Module):
         base_channels:   channels of the first encoder stage; stage i has base_channels * 2**i.
         depth:           number of stride-2 stages. The spatial size shrinks by 2**depth
                          (128 -> 8 for depth 4).
-        bottleneck_dim:  size of the latent vector z (the "compressed representation").
+        bottleneck_dim:  total number of values in the latent z (the "compressed representation").
+                         latent="dense": the length of the vector. latent="conv": channels * s * s.
         dropout:         dropout probability applied to the flattened features before the
                          bottleneck and to the expanded features after it (0 = off).
         img_size:        input height/width (128 by contract).
+        latent:          "dense" (flatten + Linear, default) or "conv" (1x1-conv latent grid).
     """
 
     def __init__(self, in_ch: int = 3, base_channels: int = 32, depth: int = 4,
-                 bottleneck_dim: int = 256, dropout: float = 0.0, img_size: int = IMG_SIZE):
+                 bottleneck_dim: int = 256, dropout: float = 0.0, img_size: int = IMG_SIZE,
+                 latent: str = "dense"):
         super().__init__()
+        if latent not in ("dense", "conv"):
+            raise ValueError(f"latent must be 'dense' or 'conv', not {latent!r}")
         if img_size % (2 ** depth) != 0:
             raise ValueError(f"img_size {img_size} must be divisible by 2**depth = {2 ** depth}")
         # Remember the arguments: they are saved in the checkpoint so the model can be rebuilt.
         self.hparams = dict(in_ch=in_ch, base_channels=base_channels, depth=depth,
-                            bottleneck_dim=bottleneck_dim, dropout=dropout, img_size=img_size)
+                            bottleneck_dim=bottleneck_dim, dropout=dropout, img_size=img_size, latent=latent)
+        self.latent = latent
         self.in_ch, self.bottleneck_dim, self.img_size = in_ch, bottleneck_dim, img_size
 
         channels = [base_channels * 2 ** i for i in range(depth)]   # e.g. [32, 64, 128, 256]
@@ -79,10 +94,22 @@ class UniversalAE(nn.Module):
             c_prev = c
         self.encoder = nn.Sequential(*enc)
 
-        # ---- dense bottleneck ----
-        self.to_latent = nn.Sequential(nn.Flatten(), nn.Dropout(dropout), nn.Linear(flat_dim, bottleneck_dim))
-        self.from_latent = nn.Sequential(nn.Linear(bottleneck_dim, flat_dim), nn.ReLU(inplace=True),
-                                         nn.Dropout(dropout))
+        # ---- bottleneck ----
+        if latent == "dense":
+            self.to_latent = nn.Sequential(nn.Flatten(), nn.Dropout(dropout), nn.Linear(flat_dim, bottleneck_dim))
+            self.from_latent = nn.Sequential(nn.Linear(bottleneck_dim, flat_dim), nn.ReLU(inplace=True),
+                                             nn.Dropout(dropout))
+        else:
+            cells = self.final_spatial ** 2
+            if bottleneck_dim % cells != 0:
+                raise ValueError(f"latent='conv': bottleneck_dim {bottleneck_dim} must be a multiple of "
+                                 f"{cells} (= {self.final_spatial}x{self.final_spatial} latent cells)")
+            self.latent_channels = bottleneck_dim // cells
+            # Dropout2d drops whole feature channels of the encoder output (the usual dropout for conv maps)
+            self.to_latent = nn.Sequential(nn.Dropout2d(dropout),
+                                           nn.Conv2d(self.final_channels, self.latent_channels, kernel_size=1))
+            self.from_latent = nn.Sequential(nn.Conv2d(self.latent_channels, self.final_channels, kernel_size=1),
+                                             nn.ReLU(inplace=True))
 
         # ---- decoder: stride-2 transposed convs, channels shrink; the last one outputs RGB ----
         dec = []
@@ -93,12 +120,12 @@ class UniversalAE(nn.Module):
 
     # The three steps are separate methods so tests (and curious students) can inspect z.
     def encode(self, x: torch.Tensor) -> torch.Tensor:
-        """Image batch (N,3,H,W) -> latent vectors (N, bottleneck_dim)."""
+        """Image batch (N,3,H,W) -> latent z: (N, bottleneck_dim) if dense, (N, C, s, s) if conv."""
         return self.to_latent(self.encoder(x))
 
     def decode(self, z: torch.Tensor) -> torch.Tensor:
-        """Latent vectors (N, bottleneck_dim) -> images (N,3,H,W) in [0,1]."""
-        h = self.from_latent(z).view(-1, self.final_channels, self.final_spatial, self.final_spatial)
+        """Latent z (as returned by encode) -> images (N,3,H,W) in [0,1]."""
+        h = self.from_latent(z).reshape(-1, self.final_channels, self.final_spatial, self.final_spatial)
         return torch.sigmoid(self.decoder(h))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -107,7 +134,7 @@ class UniversalAE(nn.Module):
     @classmethod
     def from_config(cls, model_cfg: dict) -> "UniversalAE":
         """Build from a config/checkpoint dict; unknown keys are ignored."""
-        keys = ("in_ch", "base_channels", "depth", "bottleneck_dim", "dropout", "img_size")
+        keys = ("in_ch", "base_channels", "depth", "bottleneck_dim", "dropout", "img_size", "latent")
         return cls(**{k: model_cfg[k] for k in keys if k in model_cfg})
 
 
@@ -139,7 +166,7 @@ def describe(model: UniversalAE) -> str:
     info = compression_info(model)
     return (f"UniversalAE {model.hparams}\n"
             f"  input {tuple(x.shape[1:])} -> encoder features {tuple(feat.shape[1:])} -> "
-            f"latent z {tuple(z.shape[1:])} -> output {tuple(y.shape[1:])}\n"
+            f"latent z {tuple(z.shape[1:])} [{model.latent}] -> output {tuple(y.shape[1:])}\n"
             f"  compression: {info['input_values']} input values -> {info['bottleneck_dim']} latent values "
             f"(ratio {info['compression_ratio']:.1f}:1)\n"
             f"  trainable parameters: {count_parameters(model):,}")

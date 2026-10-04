@@ -1,0 +1,5 @@
+true class,clean,salt_pepper,gaussian_blur,occlusion
+clean,0.9725,0.0,0.0174,0.0101
+salt_pepper,0.0004,0.9996,0.0,0.0
+gaussian_blur,0.0009,0.0,0.9986,0.0005
+occlusion,0.0189,0.0,0.0006,0.9805

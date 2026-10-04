@@ -1,0 +1,21 @@
+{
+  "study": "t3_moe",
+  "n_trials_requested": 10,
+  "timeout_minutes": 9,
+  "epochs_per_trial": {
+    "warmup": 1,
+    "joint": 2
+  },
+  "trial_val_subset": 736,
+  "trials_total": 12,
+  "complete": 9,
+  "pruned": 1,
+  "fail": 2,
+  "answered": 10,
+  "answered_before_this_session": 0,
+  "pruned_reasons": {
+    "median": 1
+  },
+  "timeout_hit": false,
+  "elapsed_seconds_this_session": 208.8
+}

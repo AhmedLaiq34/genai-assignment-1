@@ -30,10 +30,15 @@ def main() -> None:
     cfg = build_config(args.task, args.config, args.device_profile, overrides)
     if args.dry_run:
         from genai.common.paths import ARTIFACTS
-        from genai.tasks.task1.tune import dry_run_overrides
+        if args.task == "t4":     # Task 4 has its own dry_run_overrides (its trial runs live in runs/task4_trials)
+            dry_run_overrides = entry_point("t4", "tune", "dry_run_overrides")
+        elif args.task == "t3":   # Task 3 too (the dry run needs tmp storage / run / export folders and run.smoke)
+            dry_run_overrides = entry_point("t3", "tune", "dry_run_overrides")
+        else:
+            from genai.tasks.task1.tune import dry_run_overrides
         cfg = dry_run_overrides(cfg, ARTIFACTS / "dryrun")
-        cfg["trial_train_subset"] = cfg["trial_train_subset"] or 256
-        cfg["train"]["val_subset"] = cfg["train"]["val_subset"] or 64
+        cfg["trial_train_subset"] = cfg.get("trial_train_subset") or 256
+        cfg["train"]["val_subset"] = cfg["train"].get("val_subset") or 64
     out = entry_point(args.task, "tune", "run_study")(cfg)
     print("study directory:", out)
 

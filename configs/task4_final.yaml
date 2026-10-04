@@ -1,0 +1,51 @@
+# Task 4 final training configuration (style-conditioned face-to-sketch cGAN). Implements CONTRACTS 3.6, 3.7, 3.8.
+# Device keys (device, data_root, output_root, persist_root, num_workers) are merged in from
+# configs/devices/<profile>.yaml by scripts/*.py and by genai.tasks.task4.config.load_config.
+#
+# The model and optimiser numbers below are the best trial (#25) of the Colab Optuna study, copied digit for
+# digit from studies/task4_cgan/trials_from_console_log.csv. They are NOT results of this repository's code
+# (the scale of the logged val L1 is unknown, see docs/TASK4_PLAN.md H3).
+
+task: t4
+seed: 42
+data_config: configs/data_fs2k.yaml     # file names of split / caches (see data_fs2k.yaml)
+
+run:
+  desc: t4final         # short description used in run_id = <YYYYmmdd-HHMM>_<device>_<desc>
+  smoke: false          # true -> run_id gets the suffix _smoke and the run must never be promoted
+  project: genai-a1     # tracker project (group = task4)
+
+# folders (besides persist_root and output_root) searched by resume="auto", for example the previous
+# Kaggle version's output attached as an input
+resume_roots: []
+
+source: "Colab study task4_cgan, best trial #25, val L1 0.0928 (scale unknown)"
+
+# ---- model: constructor arguments of Generator / Discriminator (models/cgan.py)
+model:
+  base_channels: 64
+  style_dim: 32
+  dropout: 0.29338252123610636    # generator decoder only
+  num_styles: 3
+
+# ---- training
+train:
+  batch_size: 8
+  lr_g: 0.00023138114869747655
+  lr_d: 0.000349228952295573
+  lambda_l1: 199.71014173562637
+  betas: [0.5, 0.999]
+  schedule: linear_decay_half   # constant for the first half of the steps, then linear decay to 0 (plan C10)
+  amp: false                    # GAN stability first (plan C11); decided after the benchmark
+  epochs: 100                   # fits a 30 to 40 min Kaggle budget; T4 measured 10.8 s/epoch (fp32), loader-bound
+  max_steps: null               # optional hard cap on optimiser steps (smoke runs / dry runs)
+  pause_after_steps: null       # stop early WITHOUT changing the schedule (tests of resume)
+  train_subset: null            # use only the first N train pairs (smoke runs / dry runs)
+  val_subset: null              # use only the first N val pairs
+  augment: true                 # resize 143 -> identical random crop 128 + identical flip (paired)
+  log_every_steps: 50
+  sample_every_epochs: 5        # sample grid at epoch 1 and then every N epochs (0 = never)
+  snapshot_every_epochs: 50     # keep ckpt_epochNNN.pt every N epochs (0 = never)
+  checkpoint_every_minutes: 10
+  val_batch_size: 32
+  val_workers: 0                # val data is loaded in the main process (each worker costs RAM on Windows)

@@ -91,3 +91,16 @@ def test_promote_writes_only_to_given_root(tmp_path):
     ck.promote(src, "t1_universal_ae", root=models)  # re-promote replaces, no duplicate
     names = [e["name"] for e in json.loads((models / "MANIFEST.json").read_text())]
     assert sorted(names) == ["t1_universal_ae", "t2_classifier"]
+
+
+def test_promote_keeps_the_scaffold_manifest_layout(tmp_path):
+    """models/MANIFEST.json in the repository is {"version": 1, "models": []}; promote must keep that shape."""
+    src = tmp_path / "src.pt"
+    ck.save_checkpoint(src, {"x": 1})
+    models = tmp_path / "models"
+    models.mkdir()
+    (models / "MANIFEST.json").write_text('{"version":1,"models":[]}', encoding="utf-8")
+    ck.promote(src, "t1_universal_ae", root=models)
+    ck.promote(src, "t1_universal_ae", root=models)           # re-promote: still one entry
+    manifest = json.loads((models / "MANIFEST.json").read_text())
+    assert manifest["version"] == 1 and [e["name"] for e in manifest["models"]] == ["t1_universal_ae"]

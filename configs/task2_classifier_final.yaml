@@ -1,0 +1,87 @@
+# Task 2 FINAL classifier config, written by tools/t2_pipeline.py on 2026-10-04 15:46:33.
+# Best trial of study 't2_classifier': trial 10, value 0.98128.
+# Parameters copied from that trial: {"lr": 0.0021750300246031274, "batch": 32, "conv_channels": "16-32-64-128", "dropout": 0.39996509593831964, "weight_decay": 8.918064582360691e-05}
+# Schedule: 30 epochs (budget D47).
+task: t2cls
+component: classifier
+seed: 42
+data_config: configs/data_pets.yaml
+run:
+  desc: t2cls_final
+  smoke: false
+  project: genai-a1
+eval:
+  checkpoints:
+    classifier: null
+    salt: null
+    blur: null
+    occlusion: null
+model:
+  channels:
+  - 16
+  - 32
+  - 64
+  - 128
+  dropout: 0.39996509593831964
+  num_classes: 4
+train:
+  lr: 0.0021750300246031274
+  batch_size: 32
+  weight_decay: 8.918064582360691e-05
+  epochs: 30
+  max_steps: null
+  pause_after_steps: null
+  train_subset: null
+  val_subset: null
+  amp: true
+  scheduler: cosine
+  grad_clip: null
+  log_every_steps: 50
+  sample_every_epochs: 5
+  checkpoint_every_minutes: 10
+  val_batch_size: 128
+  val_workers: 0
+study: t2_classifier
+objective: macro-F1 on val manifest (maximise)
+n_trials: 12
+epochs_per_trial: 8
+trial_train_subset: null
+sampler:
+  name: TPE
+  seed: 42
+pruner:
+  name: Median
+  n_startup_trials: 5
+  n_warmup_steps: 5
+storage: artifacts/optuna/t2_classifier.db
+study_dir: studies/t2_classifier
+search_space_status: USED BY STUDY t2_classifier (this file holds its best trial)
+tuned_params:
+- name: lr
+  type: float
+  low: 0.0001
+  high: 0.003
+  log: true
+- name: batch
+  type: categorical
+  choices:
+  - 32
+  - 64
+  - 128
+- name: conv_channels
+  type: categorical
+  choices:
+  - 16-32-64
+  - 32-64-128
+  - 16-32-64-128
+  - 32-64-128-256
+- name: dropout
+  type: float
+  low: 0.0
+  high: 0.5
+  log: false
+- name: weight_decay
+  type: float
+  low: 1.0e-06
+  high: 0.01
+  log: true

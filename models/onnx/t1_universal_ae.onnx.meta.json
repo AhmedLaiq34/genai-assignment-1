@@ -1,19 +1,20 @@
 {
   "name": "t1_universal",
   "onnx_file": "t1_universal_ae.onnx",
-  "onnx_sha256": "512d25373f3c56be2ba8f18b1710b93d26d6c58b039d27557917053d02f84494",
-  "source_checkpoint": "artifacts/runs/task1/20261004-0013_local_t1_smoke/ckpt_last.pt",
-  "checkpoint_sha256": "a5e61b5bbe7ed2908db6b136cb5485d7896f1d4d043626590ed9b6420bcf44c0",
-  "run_id": "20261004-0013_local_t1_smoke",
-  "global_step": 50,
-  "smoke": true,
+  "onnx_sha256": "f75e559538948c92bf7a9d743d53a170b6d1f9ab2cf4185c4dac9f28b26fdb96",
+  "source_checkpoint": "/kaggle/working/runs/task1/20261004-1514_kaggle_t1_final_v2/ckpt_best.pt",
+  "checkpoint_sha256": "5052e4ffef7716e87bb9a2697b1ec66cdf2695111bd33cccc9342427ab591aa9",
+  "run_id": "20261004-1514_kaggle_t1_final_v2",
+  "global_step": 9016,
+  "smoke": false,
   "opset": 17,
   "model_config": {
     "in_ch": 3,
-    "base_channels": 32,
-    "depth": 4,
-    "bottleneck_dim": 256,
-    "dropout": 0.1
+    "base_channels": 64,
+    "depth": 3,
+    "latent": "conv",
+    "bottleneck_dim": 2048,
+    "dropout": 0.14768499158692194
   },
-  "parameters": 9785987
+  "parameters": 1322507
 }

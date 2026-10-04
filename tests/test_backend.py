@@ -160,12 +160,6 @@ def test_missing_model_gives_503_but_health_ok(client_no_model):
     assert r.status_code == 503 and "detail" in r.json()
 
 
-@pytest.mark.parametrize("name", ["hard", "soft", "sketch"])
-def test_stubs_are_501(client, name):
-    r = client.post(f"/api/{name}")
-    assert r.status_code == 501 and "not implemented" in r.json()["detail"]
-
-
 def test_preprocessing_matches_training_cache(tmp_path):
     """Backend preprocessing == scripts/prepare_pets.load_128 (used to build the training cache)."""
     spec = importlib.util.spec_from_file_location("prepare_pets", ROOT / "scripts" / "prepare_pets.py")

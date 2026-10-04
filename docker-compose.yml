@@ -13,7 +13,8 @@ services:
 
   frontend:
     build:
-      context: app/frontend            # its Dockerfile builds the site and runs nginx
+      context: app/frontend_v2         # the Stitch-based frontend; its Dockerfile builds the site and runs nginx
+                                       # (the first, plain frontend is still in app/frontend)
     ports:
       - "8080:80"
     depends_on:

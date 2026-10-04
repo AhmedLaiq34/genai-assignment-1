@@ -1,17 +1,79 @@
-# Structure only. Ranges/trials/epochs are set AFTER the Phase 2 benchmark (CONTRACTS §3.13). No numbers invented.
-study: t4_cgan
+# Task 4 Optuna study configuration (style-conditioned face-to-sketch cGAN). Implements CONTRACTS 3.6, 3.13.
+# Device keys (device, data_root, output_root, persist_root, num_workers) are merged in from
+# configs/devices/<profile>.yaml by scripts/*.py and by genai.tasks.task4.config.load_config.
+#
+# STATUS: the confirmatory study of this config (plan B.3) is OPTIONAL. The student decided to skip it, so
+# tune.py is only dry-run tested. The Colab study is kept as a rebuilt record (studies/task4_cgan/,
+# made by genai.tasks.task4.log_study from the console log) and the final training uses its best trial #25.
+#
+# What is known and what is not:
+# * The ranges below are the plan's (docs/TASK4_PLAN.md B.1). Every parameter value of the Colab log lies
+#   inside them (checked in tests/test_task4_tune.py), but the ORIGINAL Colab ranges, sampler, pruner and
+#   the scale of the logged objective are unknown.
+# * pruner n_startup_trials 5 / n_warmup_steps 5 is a recommendation of the plan, not the original setting.
+# * n_trials stays TBD_AFTER_BENCHMARK. Recommendation: 20 (the effective Colab study), but only if the
+#   benchmark shows it fits; the log suggests about 5 minutes per 15-epoch trial at batch 8 / 64 channels
+#   on the student's Colab GPU (an estimate from the log, not a measurement).
+
+task: t4
+seed: 42
+data_config: configs/data_fs2k.yaml     # file names of split / caches (see data_fs2k.yaml)
+
+run:
+  desc: t4study         # short description used in run_id = <YYYYmmdd-HHMM>_<device>_<desc>
+  smoke: false          # true -> run_id gets the suffix _smoke
+  project: genai-a1     # tracker project (group = task4)
+
+resume_roots: []        # extra folders searched by resume="auto" (final training only; trials never resume)
+
+# ---- model: constructor arguments of Generator / Discriminator (models/cgan.py).
+# Starting values only: every trial overwrites base_channels, style_dim and dropout with the sampled ones.
+model:
+  base_channels: 64
+  style_dim: 32
+  dropout: 0.3          # generator decoder only
+  num_styles: 3
+
+# ---- training. lr_g, lr_d, batch_size and lambda_l1 are overwritten by every trial as well.
+train:
+  batch_size: 8
+  lr_g: 2.0e-4
+  lr_d: 2.0e-4
+  lambda_l1: 100.0      # PDF-given starting value, to be investigated by Optuna (not accepted)
+  betas: [0.5, 0.999]
+  schedule: constant    # trials do not decay the learning rate (the final run uses linear_decay_half)
+  amp: false            # GAN stability first (plan C11); decided after the benchmark
+  epochs: TBD_AFTER_BENCHMARK   # epochs of the FINAL run; a trial uses epochs_per_trial instead
+  max_steps: null       # optional hard cap on optimiser steps (smoke runs / dry runs)
+  pause_after_steps: null
+  train_subset: null    # use only the first N train pairs (dry runs)
+  val_subset: null      # use only the first N val pairs (dry runs)
+  augment: true         # resize 143 -> identical random crop 128 + identical flip (paired)
+  log_every_steps: 50
+  sample_every_epochs: 0        # trials draw no sample grids (make_trial_config forces this)
+  snapshot_every_epochs: 0
+  checkpoint_every_minutes: 10  # make_trial_config raises this: trials only save at epoch ends
+  val_batch_size: 32
+  val_workers: 0        # val data is loaded in the main process (each worker costs RAM on Windows)
+
+# ---- Optuna study (plan B.1)
+study: task4_cgan
 objective: "val L1 on [0,1]-rescaled sketches (minimise)"
-n_trials: TBD_AFTER_BENCHMARK
-epochs: TBD_AFTER_BENCHMARK
-sampler: {name: TPE, seed: 42}   # policy; confirm in DECISIONS.md
-pruner: Median
-storage: artifacts/optuna/t4_cgan.db   # promoted to studies/t4_cgan.db when complete
-initial_values: {lambda_L1: 100}   # PDF-given starting points, to be investigated not accepted
+n_trials: TBD_AFTER_BENCHMARK   # recommendation: 20, only if the benchmark shows it fits (see header)
+epochs_per_trial: 15            # reduced epochs per trial, declared in the report (PDF allows fewer epochs)
+trial_train_subset: null        # optional training subset for trials; null = the full 899-pair train split
+sampler: {name: TPE, seed: 42}
+pruner: {name: Median, n_startup_trials: 5, n_warmup_steps: 5}   # recommendation: a trial can be pruned from epoch 5 of 15
+storage: artifacts/optuna/task4_cgan.db   # promoted to studies/task4_cgan_repo.db when complete
+study_dir: studies/task4_cgan_repo        # trials.csv + plots + best_params.json (kept apart from the rebuilt Colab study in studies/task4_cgan/)
+
+# Search space (plan B.1). `name` -> where it goes in the config is defined in genai/tasks/task4/config.py (PARAM_TARGETS).
+search_space_status: PLAN_RANGES   # not the original Colab ranges (unknown)
 tuned_params:
-  - {name: lr_G, range: TBD_AFTER_BENCHMARK}
-  - {name: lr_D, range: TBD_AFTER_BENCHMARK}
-  - {name: batch, range: TBD_AFTER_BENCHMARK}
-  - {name: base_channels, range: TBD_AFTER_BENCHMARK}
-  - {name: dropout, range: TBD_AFTER_BENCHMARK}
-  - {name: embed_dim, range: TBD_AFTER_BENCHMARK}
-  - {name: lambda_L1, range: TBD_AFTER_BENCHMARK}
+  - {name: lr_g,          type: float,       low: 1.0e-4, high: 4.0e-4, log: true}
+  - {name: lr_d,          type: float,       low: 1.0e-4, high: 4.0e-4, log: true}
+  - {name: batch_size,    type: categorical, choices: [8, 16, 32]}
+  - {name: base_channels, type: categorical, choices: [32, 64]}
+  - {name: dropout,       type: float,       low: 0.0,    high: 0.5,    log: false}
+  - {name: style_dim,     type: categorical, choices: [8, 16, 32]}
+  - {name: lambda_l1,     type: float,       low: 10.0,   high: 200.0,  log: true}

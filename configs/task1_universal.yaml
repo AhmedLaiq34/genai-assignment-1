@@ -2,7 +2,7 @@
 # Device keys (device, data_root, output_root, persist_root, num_workers) are merged in from
 # configs/devices/<profile>.yaml by scripts/*.py and by genai.tasks.task1.config.load_config.
 #
-# Budgets (n_trials, epochs) stay TBD_AFTER_BENCHMARK until docs/BENCHMARKS.md has measurements.
+# Budgets (n_trials, epochs, epochs_per_trial) are the student-approved values, decision D17.
 # Everything marked PROVISIONAL is a starting point for smoke runs / the benchmark, not a result.
 
 task: t1
@@ -17,10 +17,11 @@ run:
 # ---- model: constructor arguments of UniversalAE (PROVISIONAL defaults; the Optuna study picks the final ones)
 model:
   in_ch: 3
-  base_channels: 32     # PROVISIONAL
-  depth: 4              # 128 -> 8 spatial (fixed architecture choice, not tuned)
-  bottleneck_dim: 256   # PROVISIONAL
-  dropout: 0.1          # PROVISIONAL
+  base_channels: 64     # PROVISIONAL
+  depth: 3              # 128 -> 16 spatial (fixed architecture choice, not tuned) (D40)
+  latent: conv          # D40: 1x1-conv latent grid (16x16 cells); the first study used the dense vector latent
+  bottleneck_dim: 4096  # PROVISIONAL; TOTAL latent values = latent channels * 16 * 16
+  dropout: 0.03         # PROVISIONAL
 
 # ---- training (final training uses the study's best values; these are PROVISIONAL)
 train:
@@ -28,7 +29,7 @@ train:
   batch_size: 64        # PROVISIONAL
   alpha: 0.8            # PDF-given starting value, to be investigated by Optuna (not accepted)
   weight_decay: 1.0e-4  # PROVISIONAL (not tuned)
-  epochs: TBD_AFTER_BENCHMARK
+  epochs: 100        # approved budget (D17)
   max_steps: null       # optional hard cap on optimiser steps (smoke runs / dry runs)
   pause_after_steps: null   # stop early WITHOUT changing the schedule (tests of resume)
   train_subset: null    # use only the first N train images (smoke runs / dry runs)
@@ -43,15 +44,15 @@ train:
   val_workers: 0        # val data is loaded in the main process (each worker costs ~0.5 GB RAM on Windows)
 
 # ---- Optuna study (CONTRACTS 3.13)
-study: t1_universal
+study: t1_universal_v2   # v1 (dense vector latent) is kept in studies/t1_universal/; see D40
 objective: "J = 0.5*L1 + 0.5*(1-SSIM) (minimise)"
-n_trials: TBD_AFTER_BENCHMARK
-epochs_per_trial: TBD_AFTER_BENCHMARK   # trials use reduced epochs; declared in the report
+n_trials: 40        # approved budget (D17)
+epochs_per_trial: 15   # approved budget (D17); trials use reduced epochs; declared in the report
 trial_train_subset: null                # optional training subset for trials; null = all
 sampler: {name: TPE, seed: 42}
-pruner: {name: Median, n_startup_trials: 5, n_warmup_steps: 1}   # PROVISIONAL pruner settings
-storage: artifacts/optuna/t1_universal.db   # promoted to studies/t1_universal.db when complete
-study_dir: studies/t1_universal             # trials.csv + plots
+pruner: {name: Median, n_startup_trials: 8, n_warmup_steps: 8}   # D19: no pruning before epoch 8 (val J plateaus ~0.46 for the first 4-6 epochs)
+storage: artifacts/optuna/t1_universal_v2.db   # copied next to the exports when the study ends
+study_dir: studies/t1_universal_v2             # trials.csv + plots
 initial_values: {alpha: 0.8}   # PDF-given starting points, to be investigated not accepted
 
 # PROVISIONAL search space (REC, CONTRACTS 3.13: "ranges are refined after benchmarking").
@@ -60,7 +61,7 @@ search_space_status: PROVISIONAL
 tuned_params:
   - {name: lr,               type: float,       low: 1.0e-4, high: 3.0e-3, log: true}
   - {name: batch,            type: categorical, choices: [32, 64, 128]}
-  - {name: bottleneck_dim,   type: categorical, choices: [64, 128, 256, 512]}
+  - {name: bottleneck_dim,   type: categorical, choices: [1024, 2048, 4096]}   # total latent values (D40): 48:1, 24:1, 12:1
   - {name: encoder_channels, type: categorical, choices: [16, 32, 48, 64]}
   - {name: dropout,          type: float,       low: 0.0,    high: 0.3, log: false}
   - {name: alpha,            type: float,       low: 0.5,    high: 0.95, log: false}

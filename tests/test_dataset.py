@@ -82,3 +82,14 @@ def test_tampered_manifest_fails(tmp_path):
     (tmp_path / "m.jsonl.sha256").write_text((VAL_MANIFEST.parent / "pets_val_manifest.jsonl.sha256").read_text())
     with pytest.raises(ValueError):
         ds.PetsManifestDataset(bad, "val", data_root="local")
+
+
+def test_find_dir_finds_a_dataset_nested_deeper_in_a_kaggle_style_input_folder(tmp_path):
+    """/kaggle/input/datasets/<owner>/<name>/data/cache/pets128 must be found from /kaggle/input."""
+    from genai.pets.dataset import _find_dir
+    deep = tmp_path / "datasets" / "someone" / "pets-data" / "data" / "cache" / "pets128"
+    deep.mkdir(parents=True)
+    (tmp_path / "code-dataset" / "src").mkdir(parents=True)          # another dataset next to it
+    assert _find_dir(tmp_path, "cache", "pets128") == deep
+    (deep.parent / "splits").mkdir()
+    assert _find_dir(tmp_path, "splits") == deep.parent / "splits"

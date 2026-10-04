@@ -1,8 +1,8 @@
 # Frontend (React + Vite + Tailwind)
 
-Single page with four workspaces in a top nav. Only **Universal Restoration** is functional;
-Hard-Routed, Soft MoE and Face-to-Sketch are "not implemented yet" stubs with their final layout
-sketched (probability bars, 4-weight bars, Style 1/2/3 + webcam button).
+Single page with four workspaces in a top nav. **Universal Restoration** and **Hard-Routed Restoration**
+are functional; Soft MoE and Face-to-Sketch are "not implemented yet" stubs with their final layout
+sketched (4-weight bars, Style 1/2/3 + webcam button).
 
 > **TODO (Phase 6):** this layout is a plain function-over-style placeholder. It must be rebuilt
 > from the Google Stitch design.
@@ -20,8 +20,12 @@ Docker: `Dockerfile` builds with Node, serves with nginx; `nginx.conf` proxies `
 ## Files
 - `src/api.js` - the only place that calls `fetch` (base path `/api`).
 - `src/App.jsx` - nav + tab switching.
-- `src/components/UniversalWorkspace.jsx` - the working page.
-- `src/components/Stubs.jsx` - the three placeholder workspaces.
+- `src/components/InputControls.jsx` - the input controls shared by the Universal and Hard-Routed workspaces.
+- `src/useRun.js` - loading / error / result state of one run.
+- `src/components/UniversalWorkspace.jsx` - the Universal Restoration page.
+- `src/components/HardWorkspace.jsx` - the Hard-Routed Restoration page (4 probability bars, predicted class,
+  selected expert or identity bypass, input / output, latency, download).
+- `src/components/Stubs.jsx` - the two remaining placeholder workspaces (Soft MoE, Face-to-Sketch).
 - `mock/server.mjs` - mock API.
 
 ## API assumptions (match these in the backend, or edit `src/api.js`)
@@ -37,3 +41,6 @@ Docker: `Dockerfile` builds with Node, serves with nginx; `nginx.conf` proxies `
 - Response: `{input_png_b64, output_png_b64, corruption_applied, params, timing_ms:{preprocess,inference,total}}`
   (base64 without a data-URL prefix).
 - Errors: non-2xx with JSON `{detail: ...}`; `detail` is shown to the user.
+- `POST /api/hard` takes the same fields as `/api/universal`. Response: the universal fields plus
+  `probs` (4 values: clean, salt_pepper, gaussian_blur, occlusion), `predicted` (class name), `predicted_id`,
+  `expert` (`salt|blur|occlusion|identity`), `identity_bypass`, and `timing_ms:{preprocess,classifier,expert,total}`.

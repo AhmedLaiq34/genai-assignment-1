@@ -1,7 +1,5 @@
 // Placeholder workspaces: final layout is stubbed, nothing is wired to the backend yet.
 
-const CLASSES = ["clean", "salt_pepper", "gaussian_blur", "occlusion"];
-
 function NotImplemented({ title, children }) {
   return (
     <div>
@@ -35,19 +33,6 @@ function ImageBox({ label }) {
     <div className="flex h-48 w-48 items-center justify-center rounded border-2 border-dashed text-sm text-gray-400">
       {label}
     </div>
-  );
-}
-
-export function HardStub() {
-  return (
-    <NotImplemented title="Hard-Routed Restoration">
-      <div className="flex gap-4">
-        <ImageBox label="input" />
-        <ImageBox label="restored output" />
-      </div>
-      <BarPlaceholder title="Classifier probabilities" labels={CLASSES} />
-      <p className="text-sm text-gray-500">Predicted class / selected expert: --</p>
-    </NotImplemented>
   );
 }
 

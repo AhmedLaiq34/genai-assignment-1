@@ -1,0 +1,5 @@
+,train,val,test
+style 0 (Style 1),303,54,619
+style 1 (Style 2),298,52,381
+style 2 (Style 3),298,53,46
+total,899,159,1046

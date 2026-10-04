@@ -1,0 +1,23 @@
+% Optuna search spaces (budgets are the configured ones; completed counts are in the study summaries)
+\begin{tabular}{lllllllll}
+\hline
+study & parameter & type & range / choices & n\_trials (budget) & epochs per trial & pruner & pruner settings & sampler \\
+\hline
+t1\_universal\_v2 (Task 1) & lr & float & 0.0001 to 0.003 (log scale) & 40 & 15 & Median & startup 8, warm-up 8 & TPE \\
+t1\_universal\_v2 (Task 1) & batch & categorical & {32, 64, 128} & 40 & 15 & Median & startup 8, warm-up 8 & TPE \\
+t1\_universal\_v2 (Task 1) & bottleneck\_dim & categorical & {1024, 2048, 4096} & 40 & 15 & Median & startup 8, warm-up 8 & TPE \\
+t1\_universal\_v2 (Task 1) & encoder\_channels & categorical & {16, 32, 48, 64} & 40 & 15 & Median & startup 8, warm-up 8 & TPE \\
+t1\_universal\_v2 (Task 1) & dropout & float & 0.0 to 0.3 & 40 & 15 & Median & startup 8, warm-up 8 & TPE \\
+t1\_universal\_v2 (Task 1) & alpha & float & 0.5 to 0.95 & 40 & 15 & Median & startup 8, warm-up 8 & TPE \\
+t2\_classifier (Task 2) & lr & float & 0.0001 to 0.003 (log scale) & 12 & 8 & Median & startup 5, warm-up 5 & TPE \\
+t2\_classifier (Task 2) & batch & categorical & {32, 64, 128} & 12 & 8 & Median & startup 5, warm-up 5 & TPE \\
+t2\_classifier (Task 2) & conv\_channels & categorical & {16-32-64, 32-64-128, 16-32-64-128, 32-64-128-256} & 12 & 8 & Median & startup 5, warm-up 5 & TPE \\
+t2\_classifier (Task 2) & dropout & float & 0.0 to 0.5 & 12 & 8 & Median & startup 5, warm-up 5 & TPE \\
+t2\_classifier (Task 2) & weight\_decay & float & 1e-06 to 0.01 (log scale) & 12 & 8 & Median & startup 5, warm-up 5 & TPE \\
+t2\_specialist\_shared (Task 2) & lr & float & 0.0001 to 0.003 (log scale) & 10 & 8 & Median & startup 5, warm-up 2 & TPE \\
+t2\_specialist\_shared (Task 2) & bottleneck & categorical & {1024, 2048, 4096} & 10 & 8 & Median & startup 5, warm-up 2 & TPE \\
+t2\_specialist\_shared (Task 2) & channels & categorical & {16, 32, 48, 64} & 10 & 8 & Median & startup 5, warm-up 2 & TPE \\
+t2\_specialist\_shared (Task 2) & batch & categorical & {32, 64, 128} & 10 & 8 & Median & startup 5, warm-up 2 & TPE \\
+t2\_specialist\_shared (Task 2) & l1\_ssim\_weight & float & 0.5 to 0.95 & 10 & 8 & Median & startup 5, warm-up 2 & TPE \\
+\hline
+\end{tabular}

@@ -137,9 +137,16 @@ def promote(ckpt, name: str, root=None) -> Path:
     os.replace(tmp, dest)
 
     manifest_path = models_dir / "MANIFEST.json"
+    # Two layouts are accepted: a bare list of entries (the default for a new file), or the
+    # repository scaffold {"version": 1, "models": [...]}, whose wrapper is kept as it is.
+    wrapper = None
     entries = []
     if manifest_path.exists():
-        entries = json.loads(manifest_path.read_text(encoding="utf-8"))
+        loaded = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if isinstance(loaded, dict):
+            wrapper, entries = loaded, list(loaded.get("models", []))
+        else:
+            entries = loaded
     entries = [e for e in entries if e.get("name") != name]
     entries.append({
         "name": name,
@@ -147,5 +154,8 @@ def promote(ckpt, name: str, root=None) -> Path:
         "size": dest.stat().st_size,
         "source": str(ckpt),
     })
+    if wrapper is not None:
+        wrapper["models"] = entries
+        entries = wrapper
     _write_json_atomic(manifest_path, entries)
     return dest

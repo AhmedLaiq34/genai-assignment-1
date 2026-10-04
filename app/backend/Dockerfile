@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir ./genai_pkg
 
 COPY app/backend/app ./app
 COPY app/backend/samples ./samples
+COPY app/backend/samples_sketch ./samples_sketch
 ENV MODELS_DIR=/models SAMPLES_DIR=/srv/samples
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
